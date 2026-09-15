@@ -13,60 +13,60 @@ class EscPosReceiptFormatter {
             maximumFractionDigits = 0
         }
 
-        out += byteArrayOf(0x1B, 0x40) // reset
+        out.addAll(byteArrayOf(0x1B, 0x40).toList()) // reset
 
-        out += align(2)
-        out += text("${receipt.invoiceNumber}\n")
-        out += text("ORIGINAL\n\n")
+        out.addAll(align(2))
+        out.addAll(text("${receipt.invoiceNumber}\n"))
+        out.addAll(text("ORIGINAL\n\n"))
 
-        out += align(1)
-        out += byteArrayOf(0x1D, 0x21, 0x11)
-        out += text("${receipt.tradeName}\n")
-        out += byteArrayOf(0x1D, 0x21, 0x00)
-        out += bold(true)
-        out += text("FACTURA ELECTRÓNICA\n")
-        out += bold(false)
-        out += text("Identificador: ${receipt.dianConsecutive}\n")
-        out += text("Cajero: ${receipt.cashier}\n")
-        out += text("${receipt.dateTime}\n")
-        out += text("Sala-Mesa: ${receipt.tableCodes}\n")
-        out += text("================================\n")
+        out.addAll(align(1))
+        out.addAll(byteArrayOf(0x1D, 0x21, 0x11).toList())
+        out.addAll(text("${receipt.tradeName}\n"))
+        out.addAll(byteArrayOf(0x1D, 0x21, 0x00).toList())
+        out.addAll(bold(true))
+        out.addAll(text("FACTURA ELECTRÓNICA\n"))
+        out.addAll(bold(false))
+        out.addAll(text("Identificador: ${receipt.dianConsecutive}\n"))
+        out.addAll(text("Cajero: ${receipt.cashier}\n"))
+        out.addAll(text("${receipt.dateTime}\n"))
+        out.addAll(text("Sala-Mesa: ${receipt.tableCodes}\n"))
+        out.addAll(text("================================\n"))
 
-        out += align(0)
-        out += text("${receipt.customerName.uppercase()}\n")
-        out += text("CC: ${receipt.customerId}\n")
-        out += text("--------------------------------\n")
-        out += text("DESCRIPCIÓN\n")
-        out += text(" | CAN REF UM %IM | VALOR\n")
-        out += text("--------------------------------\n")
+        out.addAll(align(0))
+        out.addAll(text("${receipt.customerName.uppercase()}\n"))
+        out.addAll(text("CC: ${receipt.customerId}\n"))
+        out.addAll(text("--------------------------------\n"))
+        out.addAll(text("DESCRIPCIÓN\n"))
+        out.addAll(text(" | CAN REF UM %IM | VALOR\n"))
+        out.addAll(text("--------------------------------\n"))
 
         for (line in receipt.lines) {
-            out += text("${line.description}\n")
+            out.addAll(text("${line.description}\n"))
             val left = " | ${line.quantity.toInt()}   uds  8"
-            out += text("${twoColumns(left, money.format(line.lineTotal), 32)}\n")
+            out.addAll(text("${twoColumns(left, money.format(line.lineTotal), 32)}\n"))
         }
 
-        out += text("--------------------------------\n")
-        out += bold(true)
-        out += text(
+        out.addAll(text("--------------------------------\n"))
+        out.addAll(bold(true))
+        out.addAll(text(
             "${twoColumns("${receipt.articleCount} Artículos", "TOTAL ${money.format(receipt.total)}", 32)}\n"
-        )
-        out += bold(false)
-        out += text("--------------------------------\n")
-        out += text("${twoColumns(receipt.paymentMethod, "Entregado", 32)}\n")
-        out += text("${twoColumns("", money.format(receipt.amountTendered), 32)}\n")
-        out += text("--------------------------------\n")
-        out += text("Impuestos incluidos\n")
-        out += text(
+        ))
+        out.addAll(bold(false))
+        out.addAll(text("--------------------------------\n"))
+        out.addAll(text("${twoColumns(receipt.paymentMethod, "Entregado", 32)}\n"))
+        out.addAll(text("${twoColumns("", money.format(receipt.amountTendered), 32)}\n"))
+        out.addAll(text("--------------------------------\n"))
+        out.addAll(text("Impuestos incluidos\n"))
+        out.addAll(text(
             "${twoColumns("IMPOCONSUMO 8%  ${money.format(receipt.impoconsumoBase)}", money.format(receipt.impoconsumo), 32)}\n"
-        )
-        out += text("--------------------------------\n")
+        ))
+        out.addAll(text("--------------------------------\n"))
 
-        out += align(1)
-        out += text("Resolución DIAN ${receipt.resolutionNumber}\n")
-        out += text("RANGO (Desde ${receipt.rangeFrom} Hasta ${receipt.rangeTo})\n")
-        out += text("Autorizado\n\n\n\n")
-        out += byteArrayOf(0x1D, 0x56, 0x41, 0x00) // cut
+        out.addAll(align(1))
+        out.addAll(text("Resolución DIAN ${receipt.resolutionNumber}\n"))
+        out.addAll(text("RANGO (Desde ${receipt.rangeFrom} Hasta ${receipt.rangeTo})\n"))
+        out.addAll(text("Autorizado\n\n\n\n"))
+        out.addAll(byteArrayOf(0x1D, 0x56, 0x41, 0x00).toList()) // cut
 
         return out.toByteArray()
     }
@@ -74,14 +74,14 @@ class EscPosReceiptFormatter {
     /** Minimal self-test ticket (no Host XML required). */
     fun formatTestTicket(macHint: String): ByteArray {
         val out = mutableListOf<Byte>()
-        out += byteArrayOf(0x1B, 0x40)
-        out += align(1)
-        out += bold(true)
-        out += text("Host Print Gateway\n")
-        out += bold(false)
-        out += text("Prueba de impresion\n")
-        out += text("$macHint\n\n\n\n")
-        out += byteArrayOf(0x1D, 0x56, 0x41, 0x00)
+        out.addAll(byteArrayOf(0x1B, 0x40).toList())
+        out.addAll(align(1))
+        out.addAll(bold(true))
+        out.addAll(text("Host Print Gateway\n"))
+        out.addAll(bold(false))
+        out.addAll(text("Prueba de impresion\n"))
+        out.addAll(text("$macHint\n\n\n\n"))
+        out.addAll(byteArrayOf(0x1D, 0x56, 0x41, 0x00).toList())
         return out.toByteArray()
     }
 

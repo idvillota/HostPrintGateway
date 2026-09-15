@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.ejemplo.holamundo.app-mergeDebugResources-37:/values-ro/values-ro.xml",
+            "outputFile": "com.host.printgateway.app-mergeDebugResources-41:/values-ro/values-ro.xml",
             "map": [
                 {
                     "source": "C:\\Users\\GABRIEL\\.gradle\\caches\\transforms-3\\a357bbe47ec847b933e6735fc08e1f33\\transformed\\ui-release\\res\\values-ro\\values-ro.xml",

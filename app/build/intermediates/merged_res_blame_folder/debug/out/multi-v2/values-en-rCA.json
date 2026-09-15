@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.ejemplo.holamundo.app-mergeDebugResources-37:/values-en-rCA/values-en-rCA.xml",
+            "outputFile": "com.host.printgateway.app-mergeDebugResources-41:/values-en-rCA/values-en-rCA.xml",
             "map": [
                 {
                     "source": "C:\\Users\\GABRIEL\\.gradle\\caches\\transforms-3\\0074f76451607ba4f91a6f49f0da20dd\\transformed\\foundation-release\\res\\values-en-rCA\\values-en-rCA.xml",

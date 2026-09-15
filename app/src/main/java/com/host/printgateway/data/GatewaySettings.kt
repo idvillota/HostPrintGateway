@@ -28,6 +28,8 @@ class GatewaySettings(context: Context) {
     fun isConfigured(): Boolean =
         apiBaseUrl.isNotBlank() && deviceToken.isNotBlank() && printerMac.isNotBlank()
 
+    fun isPrinterConfigured(): Boolean = printerMac.isNotBlank()
+
     companion object {
         private const val PREFS = "host_print_gateway"
         private const val KEY_API_URL = "api_base_url"

@@ -23,6 +23,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,12 +36,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.host.printgateway.data.GatewaySettings
+import com.host.printgateway.data.PrintGatewayDatabase
+import com.host.printgateway.data.PrintJobEntity
 import com.host.printgateway.printer.BluetoothEscPosPrinter
 import com.host.printgateway.printer.EscPosReceiptFormatter
 import com.host.printgateway.service.PrintGatewayService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 /**
  * Minimal control panel: configure, start/stop gateway, test printer.
@@ -64,6 +69,7 @@ class MainActivity : ComponentActivity() {
                     var apiUrl by remember { mutableStateOf(settings.apiBaseUrl) }
                     var token by remember { mutableStateOf(settings.deviceToken) }
                     var mac by remember { mutableStateOf(settings.printerMac) }
+                    var manualXml by remember { mutableStateOf("") }
                     var status by remember { mutableStateOf("Listo") }
                     var busy by remember { mutableStateOf(false) }
 
@@ -112,11 +118,57 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth(),
                         )
 
+                        Text(
+                            text = "Prueba temporal offline",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        OutlinedTextField(
+                            value = manualXml,
+                            onValueChange = { manualXml = it },
+                            label = { Text("XML del recibo") },
+                            minLines = 6,
+                            maxLines = 12,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedButton(
+                            enabled = manualXml.isNotBlank(),
+                            onClick = {
+                                scope.launch {
+                                    val result = withContext(Dispatchers.IO) {
+                                        runCatching {
+                                            PrintGatewayDatabase.get(this@MainActivity)
+                                                .printJobDao()
+                                                .insertAll(
+                                                    listOf(
+                                                        PrintJobEntity(
+                                                            id = "manual-${UUID.randomUUID()}",
+                                                            kind = "receipt",
+                                                            payloadFormat = "sales-receipt-xml",
+                                                            payload = manualXml,
+                                                        ),
+                                                    ),
+                                                )
+                                        }
+                                    }
+                                    status = if (result.isSuccess) {
+                                        manualXml = ""
+                                        "XML guardado en la cola offline"
+                                    } else {
+                                        "Error guardando XML: ${result.exceptionOrNull()?.message}"
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Insertar XML en Room")
+                        }
+
                         Button(
                             onClick = {
                                 persist()
-                                if (!settings.isConfigured()) {
-                                    status = "Completa URL, token y MAC"
+                                if (!settings.isPrinterConfigured()) {
+                                    status = "Indica la MAC de la impresora"
                                     return@Button
                                 }
                                 ensurePermissions()
