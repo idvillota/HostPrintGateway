@@ -3,7 +3,8 @@ package com.host.printgateway.data
 import android.util.Xml
 import com.host.printgateway.network.AddOrderLineRequest
 import com.host.printgateway.network.CatalogApi
-import com.host.printgateway.network.SalesOrderApi
+import com.host.printgateway.network.MobileSyncApi
+import com.host.printgateway.network.RemoteSale
 import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -127,6 +128,8 @@ class RestaurantRepository(
             .take(8)
             .uppercase(Locale.US)
 
+        val knownRemoteId = dao.getRemoteOrderIdForTable(table.id)
+
         val order = OrderEntity(
             id = orderId,
             diningTableId = table.id,
@@ -144,6 +147,8 @@ class RestaurantRepository(
             total = lines.sumOf {
                 it.quantity * it.unitPrice
             },
+            remoteId = knownRemoteId,
+            syncStatus = RestaurantStatuses.SYNC_STATE_PENDING,
         )
 
         val items = lines.map { line ->
@@ -196,52 +201,124 @@ class RestaurantRepository(
         return orderId
     }
 
+    private companion object {
+        const val REMOTE_ITEM_PREFIX = "remote:"
+    }
+
     suspend fun syncPendingOrders(
         baseUrl: String,
+        deviceId: String,
     ): Result<Int> = runCatching {
-        val api = SalesOrderApi(baseUrl, deviceToken)
+        val pending = dao.getOrdersPendingSync()
+        if (pending.isEmpty()) return@runCatching 0
+
+        val ready = mutableListOf<Pair<OrderEntity, List<AddOrderLineRequest>>>()
+        pending.forEach { order ->
+            val localLines = dao.getOrderItems(order.id)
+                .filter { !it.id.startsWith(REMOTE_ITEM_PREFIX) }
+                .map {
+                    AddOrderLineRequest(
+                        productId = it.productId,
+                        quantity = it.quantity,
+                        notes = it.notes,
+                    )
+                }
+            if (localLines.isEmpty() && !order.remoteId.isNullOrBlank()) {
+                dao.markOrderSynced(order.id, order.remoteId)
+            } else if (localLines.isNotEmpty()) {
+                ready += order to localLines
+            }
+        }
+        if (ready.isEmpty()) return@runCatching 0
+
+        val api = MobileSyncApi(baseUrl, deviceToken)
+        val response = api.uploadBatch(
+            deviceId = deviceId,
+            orders = ready,
+        ).getOrThrow()
 
         var synced = 0
-
-        for (order in dao.getOrdersPendingSync()) {
-
-            val tableId = order.diningTableId
-                ?: error(
-                    "La orden ${order.id} no tiene mesa"
-                )
-
-            val remoteId = order.remoteId
-                ?: api.createOpenOrder(tableId)
-                    .getOrThrow()
-                    .also {
-                        dao.saveRemoteOrderId(
-                            order.id,
-                            it,
-                        )
-                    }
-
-            val lines = dao.getOrderItems(order.id).map {
-                AddOrderLineRequest(
-                    it.productId,
-                    it.quantity,
-                    it.notes,
-                )
+        response.forEach { result ->
+            if (result.synced && result.remoteId.isNotBlank()) {
+                dao.markOrderSynced(result.localId, result.remoteId)
+                synced++
+            } else if (!result.synced) {
+                dao.markOrderSyncFailed(result.localId)
             }
+        }
+        synced
+    }
 
-            api.confirmOrder(
-                remoteId,
-                lines,
-            ).getOrThrow()
+    suspend fun pullMissedSales(
+        baseUrl: String,
+        deviceId: String,
+        since: String,
+    ): Result<String> = runCatching {
+        val page = MobileSyncApi(baseUrl, deviceToken)
+            .fetchPendingSales(deviceId, since)
+            .getOrThrow()
+        page.sales.forEach { applyRemoteSale(it) }
+        page.cursor.ifBlank { since }
+    }
 
-            dao.markOrderSynced(
-                order.id,
-                remoteId,
+    suspend fun applyRemoteSale(sale: RemoteSale) {
+        if (sale.remoteOrderId.isBlank()) return
+        val existing = dao.getOrderByRemoteId(sale.remoteOrderId)
+            ?: sale.tableId.takeIf { it.isNotBlank() }?.let { dao.getOpenLocalOrderForTable(it) }
+        val orderId = existing?.id ?: UUID.randomUUID().toString()
+        if (existing == null) {
+            val subtotal = sale.lines.sumOf { it.quantity * it.unitPrice }
+            dao.insertOrder(
+                OrderEntity(
+                    id = orderId,
+                    diningTableId = sale.tableId.ifBlank { null },
+                    diningTableCode = sale.tableCode.ifBlank { "—" },
+                    number = sale.remoteOrderId.take(8).uppercase(Locale.US),
+                    customerId = null,
+                    waiterName = sale.waiterName.ifBlank { "HOST" },
+                    deviceId = "host",
+                    status = RestaurantStatuses.ORDER_SYNCED,
+                    openedAtUtc = System.currentTimeMillis(),
+                    subtotal = subtotal,
+                    taxAmount = 0.0,
+                    total = subtotal,
+                    remoteId = sale.remoteOrderId,
+                    syncStatus = RestaurantStatuses.SYNC_STATE_SYNCED,
+                ),
             )
-
-            synced++
+        } else if (existing.remoteId.isNullOrBlank()) {
+            dao.saveRemoteOrderId(existing.id, sale.remoteOrderId)
         }
 
-        synced
+        val knownIds = dao.getOrderItems(orderId).map { it.id }.toSet()
+        val freshItems = sale.lines.mapNotNull { line ->
+            val sourceId = line.lineId.ifBlank {
+                "${sale.remoteOrderId}:${line.productId}:${line.notes}"
+            }
+            val itemId = REMOTE_ITEM_PREFIX + sourceId
+            if (itemId in knownIds) {
+                null
+            } else {
+                OrderItemEntity(
+                    id = itemId,
+                    orderId = orderId,
+                    productId = line.productId,
+                    productName = line.productName.ifBlank { "Producto" },
+                    quantity = line.quantity,
+                    unitPrice = line.unitPrice,
+                    lineTotal = line.quantity * line.unitPrice,
+                    unitCostPrice = null,
+                    notes = line.notes,
+                    sentToKitchenAtUtc = null,
+                )
+            }
+        }
+        if (freshItems.isNotEmpty()) {
+            dao.insertOrderItems(freshItems)
+        }
+        val items = dao.getOrderItems(orderId)
+        val total = items.sumOf { it.lineTotal }
+        dao.updateOrderTotals(orderId, total, total)
     }
 
     /**

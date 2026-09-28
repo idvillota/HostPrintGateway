@@ -115,14 +115,35 @@ abstract class RestaurantDao {
     @Query("SELECT * FROM orders ORDER BY createdAt DESC")
     abstract suspend fun getOrders(): List<OrderEntity>
 
-    @Query("SELECT * FROM orders WHERE status = 'SYNC_PENDING' ORDER BY createdAt")
+    @Query("SELECT * FROM orders WHERE status != 'PAID' ORDER BY createdAt DESC")
+    abstract suspend fun getUnpaidOrders(): List<OrderEntity>
+
+    @Query("UPDATE orders SET status = 'PAID', closedAtUtc = :closedAt WHERE id IN (:ids)")
+    abstract suspend fun markOrdersPaid(ids: List<String>, closedAt: Long)
+
+    @Query("SELECT * FROM orders WHERE syncStatus != 'SYNCED' ORDER BY createdAt")
     abstract suspend fun getOrdersPendingSync(): List<OrderEntity>
+
+    @Query("SELECT remoteId FROM orders WHERE diningTableId = :tableId AND remoteId IS NOT NULL AND status != 'PAID' ORDER BY createdAt DESC LIMIT 1")
+    abstract suspend fun getRemoteOrderIdForTable(tableId: String): String?
+
+    @Query("SELECT * FROM orders WHERE diningTableId = :tableId AND status != 'PAID' AND (remoteId IS NULL OR remoteId = '') ORDER BY createdAt DESC LIMIT 1")
+    abstract suspend fun getOpenLocalOrderForTable(tableId: String): OrderEntity?
+
+    @Query("SELECT * FROM orders WHERE remoteId = :remoteId LIMIT 1")
+    abstract suspend fun getOrderByRemoteId(remoteId: String): OrderEntity?
+
+    @Query("UPDATE orders SET subtotal = :subtotal, total = :total WHERE id = :id")
+    abstract suspend fun updateOrderTotals(id: String, subtotal: Double, total: Double)
 
     @Query("SELECT * FROM order_items WHERE orderId = :orderId ORDER BY id")
     abstract suspend fun getOrderItems(orderId: String): List<OrderItemEntity>
 
-    @Query("UPDATE orders SET status = 'SYNCED', remoteId = :remoteId WHERE id = :localId")
+    @Query("UPDATE orders SET syncStatus = 'SYNCED', remoteId = :remoteId, status = CASE WHEN status = 'PAID' THEN 'PAID' ELSE 'SYNCED' END WHERE id = :localId")
     abstract suspend fun markOrderSynced(localId: String, remoteId: String)
+
+    @Query("UPDATE orders SET syncStatus = 'FAILED' WHERE id = :localId")
+    abstract suspend fun markOrderSyncFailed(localId: String)
 
     @Query("UPDATE orders SET remoteId = :remoteId WHERE id = :localId")
     abstract suspend fun saveRemoteOrderId(localId: String, remoteId: String)

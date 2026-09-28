@@ -125,6 +125,7 @@ class CatalogApi(
                 if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream,
                 StandardCharsets.UTF_8,
             )).use { it.readText() }
+            if (connection.responseCode == 401) throw SyncUnauthorized("La sesión expiró")
             if (connection.responseCode !in 200..299) error("GET $path HTTP ${connection.responseCode}: ${body.take(200)}")
             val root = body.trim()
             val array = when {

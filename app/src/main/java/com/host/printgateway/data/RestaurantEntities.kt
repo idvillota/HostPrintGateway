@@ -109,6 +109,7 @@ data class OrderEntity(
     val createdAt: Long = System.currentTimeMillis(),
     val remoteId: String? = null,
     val closedAtUtc: Long? = null,
+    val syncStatus: String = RestaurantStatuses.SYNC_STATE_PENDING,
 )
 
 @Entity(tableName = "order_items")
@@ -143,6 +144,10 @@ object RestaurantStatuses {
     const val ORDER_CONFIRMED = "CONFIRMED"
     const val ORDER_SYNC_PENDING = "SYNC_PENDING"
     const val ORDER_SYNCED = "SYNCED"
+    const val ORDER_PAID = "PAID"
+    const val SYNC_STATE_PENDING = "PENDING"
+    const val SYNC_STATE_SYNCED = "SYNCED"
+    const val SYNC_STATE_FAILED = "FAILED"
     const val TICKET_PENDING = "PENDING"
     const val TICKET_PRINTING = "PRINTING"
     const val TICKET_PRINTED = "PRINTED"

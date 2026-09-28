@@ -21,7 +21,7 @@ import androidx.room.RoomDatabase
         OrderItemEntity::class,
         KitchenTicketEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class PrintGatewayDatabase : RoomDatabase() {
@@ -42,6 +42,7 @@ abstract class PrintGatewayDatabase : RoomDatabase() {
                 )
                     .addMigrations(MIGRATION_1_2)
                     .addMigrations(MIGRATION_2_3)
+                    .addMigrations(MIGRATION_3_4)
                     .build().also { instance = it }
             }
 
@@ -89,6 +90,13 @@ abstract class PrintGatewayDatabase : RoomDatabase() {
                 database.execSQL("CREATE TABLE IF NOT EXISTS product_ingredients (id TEXT NOT NULL PRIMARY KEY, productId TEXT NOT NULL, ingredientId TEXT NOT NULL, quantity REAL NOT NULL)")
                 database.execSQL("CREATE TABLE IF NOT EXISTS product_bundle_lines (id TEXT NOT NULL PRIMARY KEY, productId TEXT NOT NULL, componentProductId TEXT NOT NULL, quantity REAL NOT NULL, sortOrder INTEGER NOT NULL)")
                 database.execSQL("CREATE TABLE IF NOT EXISTS product_type_printer_mappings (id TEXT NOT NULL PRIMARY KEY, productTypeId TEXT NOT NULL, printerStationId TEXT NOT NULL)")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : androidx.room.migration.Migration(3, 4) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE orders ADD COLUMN syncStatus TEXT NOT NULL DEFAULT 'PENDING'")
+                database.execSQL("UPDATE orders SET syncStatus = 'SYNCED' WHERE status = 'SYNCED' OR remoteId IS NOT NULL")
             }
         }
     }
