@@ -1,6 +1,7 @@
 package com.host.printgateway.data
 
 import android.content.Context
+import com.host.printgateway.network.BackendAuth
 
 /**
  * Persists gateway configuration (SharedPreferences — minimal, no extra libs).
@@ -14,7 +15,7 @@ class GatewaySettings(context: Context) {
         set(value) = prefs.edit().putString(KEY_API_URL, value.trim().trimEnd('/')).apply()
 
     var deviceToken: String
-        get() = prefs.getString(KEY_TOKEN, "").orEmpty()
+        get() = prefs.getString(KEY_TOKEN, null).orEmpty().ifBlank { BackendAuth.DEFAULT_TOKEN }
         set(value) = prefs.edit().putString(KEY_TOKEN, value.trim()).apply()
 
     var printerMac: String

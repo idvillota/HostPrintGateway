@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets
  */
 class PrintJobApi(
     private val baseUrl: String,
-    private val deviceToken: String,
+    private val deviceToken: String = BackendAuth.DEFAULT_TOKEN,
 ) {
 
     fun fetchPendingJobs(): Result<List<PrintJobDto>> = runCatching {
@@ -51,13 +51,39 @@ class PrintJobApi(
     }
 
     private fun open(method: String, path: String): HttpURLConnection {
+
         val url = URL(baseUrl.trimEnd('/') + path)
+        val authValue = BackendAuth.authorizationValue(deviceToken)
+    
+        println("========== HTTP REQUEST ==========")
+        println("Method: $method")
+        println("URL: $url")
+        println("Token vacío: ${deviceToken.isBlank()}")
+        println(
+            "Authorization preview: ${
+                if (authValue.length > 25)
+                    authValue.take(25) + "..."
+                else
+                    authValue
+            }"
+        )
+    
         return (url.openConnection() as HttpURLConnection).apply {
+    
             requestMethod = method
+    
             connectTimeout = 15_000
             readTimeout = 30_000
-            setRequestProperty("Accept", "application/json")
-            setRequestProperty("X-Print-Client-Token", deviceToken)
+    
+            setRequestProperty(
+                "Accept",
+                "application/json"
+            )
+    
+            setRequestProperty(
+                BackendAuth.AUTHORIZATION_HEADER,
+                authValue
+            )
         }
     }
 

@@ -15,6 +15,7 @@ import com.host.printgateway.network.PrintJobAckRequest
 import com.host.printgateway.network.PrintJobApi
 import com.host.printgateway.printer.BluetoothEscPosPrinter
 import com.host.printgateway.printer.PrintJobRenderer
+import com.host.printgateway.printer.KitchenTicketFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -64,8 +65,10 @@ class PrintGatewayService : Service() {
             }
             val printer = BluetoothEscPosPrinter(settings.printerMac)
             val renderer = PrintJobRenderer()
+            val ticketFormatter = KitchenTicketFormatter()
             val database = PrintGatewayDatabase.get(this@PrintGatewayService)
-            val jobsDao = database.printJobDao()
+            val printJobsDao = database.printJobDao()
+            val restaurantDao = database.restaurantDao()
 
             while (isActive) {
                 try {
@@ -79,7 +82,7 @@ class PrintGatewayService : Service() {
                             emptyList()
                         }
                         if (remoteJobs.isNotEmpty()) {
-                            jobsDao.insertAll(remoteJobs.map { job ->
+                            printJobsDao.insertAll(remoteJobs.map { job ->
                                 PrintJobEntity(
                                     id = job.id,
                                     kind = job.kind,
@@ -90,13 +93,13 @@ class PrintGatewayService : Service() {
                             updateNotification("Trabajos guardados: ${remoteJobs.size}")
                         }
 
-                        for (job in jobsDao.getPrintedAwaitingAck()) {
+                        for (job in printJobsDao.getPrintedAwaitingAck()) {
                             if (api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess) {
-                                jobsDao.deleteById(job.id)
+                                printJobsDao.deleteById(job.id)
                             }
                         }
 
-                        val pendingJobs = jobsDao.getPending()
+                        val pendingJobs = printJobsDao.getPending()
                         if (pendingJobs.isEmpty()) {
                             updateNotification("Escuchando… (cola vacía)")
                         }
@@ -121,9 +124,9 @@ class PrintGatewayService : Service() {
                             val bytes = rendered.getOrThrow()
                             val printed = printer.print(bytes)
                             if (printed.isSuccess) {
-                                jobsDao.markPrinted(job.id)
+                                printJobsDao.markPrinted(job.id)
                                 if (api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess) {
-                                    jobsDao.deleteById(job.id)
+                                    printJobsDao.deleteById(job.id)
                                     updateNotification("OK ${job.id.take(8)}")
                                 } else {
                                     updateNotification("Impreso offline: ${job.id.take(8)}")
@@ -132,6 +135,22 @@ class PrintGatewayService : Service() {
                                 val msg = printed.exceptionOrNull()?.message ?: "print failed"
                                 api?.acknowledge(job.id, PrintJobAckRequest(false, msg))
                                 updateNotification("Error impresora: ${msg.take(60)}")
+                                break
+                            }
+                        }
+
+                        for (ticket in restaurantDao.getPendingTickets()) {
+                            updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
+                            val printed = printer.print(ticketFormatter.format(ticket.payload))
+                            if (printed.isSuccess) {
+                                restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                                updateNotification("Comanda OK ${ticket.id.take(8)}")
+                            } else {
+                                restaurantDao.markTicketFailed(
+                                    ticket.id,
+                                    printed.exceptionOrNull()?.message ?: "print failed",
+                                )
+                                updateNotification("Error comanda: ${ticket.id.take(8)}")
                                 break
                             }
                         }
