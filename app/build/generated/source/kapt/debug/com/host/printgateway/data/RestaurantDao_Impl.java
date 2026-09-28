@@ -12,6 +12,7 @@ import androidx.room.RoomSQLiteQuery;
 import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
+import androidx.room.util.StringUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
 import java.lang.Class;
 import java.lang.Double;
@@ -20,6 +21,7 @@ import java.lang.Long;
 import java.lang.Object;
 import java.lang.Override;
 import java.lang.String;
+import java.lang.StringBuilder;
 import java.lang.SuppressWarnings;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,7 +66,11 @@ public final class RestaurantDao_Impl extends RestaurantDao {
 
   private final SharedSQLiteStatement __preparedStmtOfClearPrinters;
 
+  private final SharedSQLiteStatement __preparedStmtOfUpdateOrderTotals;
+
   private final SharedSQLiteStatement __preparedStmtOfMarkOrderSynced;
+
+  private final SharedSQLiteStatement __preparedStmtOfMarkOrderSyncFailed;
 
   private final SharedSQLiteStatement __preparedStmtOfSaveRemoteOrderId;
 
@@ -315,7 +321,7 @@ public final class RestaurantDao_Impl extends RestaurantDao {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR ABORT INTO `orders` (`id`,`diningTableId`,`diningTableCode`,`number`,`customerId`,`waiterName`,`deviceId`,`status`,`openedAtUtc`,`subtotal`,`taxAmount`,`total`,`createdAt`,`remoteId`,`closedAtUtc`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        return "INSERT OR ABORT INTO `orders` (`id`,`diningTableId`,`diningTableCode`,`number`,`customerId`,`waiterName`,`deviceId`,`status`,`openedAtUtc`,`subtotal`,`taxAmount`,`total`,`createdAt`,`remoteId`,`closedAtUtc`,`syncStatus`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       }
 
       @Override
@@ -375,6 +381,11 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           statement.bindNull(15);
         } else {
           statement.bindLong(15, entity.getClosedAtUtc());
+        }
+        if (entity.getSyncStatus() == null) {
+          statement.bindNull(16);
+        } else {
+          statement.bindString(16, entity.getSyncStatus());
         }
       }
     };
@@ -527,11 +538,27 @@ public final class RestaurantDao_Impl extends RestaurantDao {
         return _query;
       }
     };
+    this.__preparedStmtOfUpdateOrderTotals = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE orders SET subtotal = ?, total = ? WHERE id = ?";
+        return _query;
+      }
+    };
     this.__preparedStmtOfMarkOrderSynced = new SharedSQLiteStatement(__db) {
       @Override
       @NonNull
       public String createQuery() {
-        final String _query = "UPDATE orders SET status = 'SYNCED', remoteId = ? WHERE id = ?";
+        final String _query = "UPDATE orders SET syncStatus = 'SYNCED', remoteId = ?, status = CASE WHEN status = 'PAID' THEN 'PAID' ELSE 'SYNCED' END WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfMarkOrderSyncFailed = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE orders SET syncStatus = 'FAILED' WHERE id = ?";
         return _query;
       }
     };
@@ -885,6 +912,40 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   }
 
   @Override
+  public Object updateOrderTotals(final String id, final double subtotal, final double total,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfUpdateOrderTotals.acquire();
+        int _argIndex = 1;
+        _stmt.bindDouble(_argIndex, subtotal);
+        _argIndex = 2;
+        _stmt.bindDouble(_argIndex, total);
+        _argIndex = 3;
+        if (id == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, id);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfUpdateOrderTotals.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Object markOrderSynced(final String localId, final String remoteId,
       final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
@@ -915,6 +976,36 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           }
         } finally {
           __preparedStmtOfMarkOrderSynced.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markOrderSyncFailed(final String localId,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfMarkOrderSyncFailed.acquire();
+        int _argIndex = 1;
+        if (localId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, localId);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfMarkOrderSyncFailed.release(_stmt);
         }
       }
     }, $completion);
@@ -1689,6 +1780,7 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfRemoteId = CursorUtil.getColumnIndexOrThrow(_cursor, "remoteId");
           final int _cursorIndexOfClosedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "closedAtUtc");
+          final int _cursorIndexOfSyncStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "syncStatus");
           final List<OrderEntity> _result = new ArrayList<OrderEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final OrderEntity _item;
@@ -1762,7 +1854,13 @@ public final class RestaurantDao_Impl extends RestaurantDao {
             } else {
               _tmpClosedAtUtc = _cursor.getLong(_cursorIndexOfClosedAtUtc);
             }
-            _item = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc);
+            final String _tmpSyncStatus;
+            if (_cursor.isNull(_cursorIndexOfSyncStatus)) {
+              _tmpSyncStatus = null;
+            } else {
+              _tmpSyncStatus = _cursor.getString(_cursorIndexOfSyncStatus);
+            }
+            _item = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc,_tmpSyncStatus);
             _result.add(_item);
           }
           return _result;
@@ -1775,8 +1873,8 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   }
 
   @Override
-  public Object getOrdersPendingSync(final Continuation<? super List<OrderEntity>> $completion) {
-    final String _sql = "SELECT * FROM orders WHERE status = 'SYNC_PENDING' ORDER BY createdAt";
+  public Object getUnpaidOrders(final Continuation<? super List<OrderEntity>> $completion) {
+    final String _sql = "SELECT * FROM orders WHERE status != 'PAID' ORDER BY createdAt DESC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
     return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<OrderEntity>>() {
@@ -1800,6 +1898,7 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
           final int _cursorIndexOfRemoteId = CursorUtil.getColumnIndexOrThrow(_cursor, "remoteId");
           final int _cursorIndexOfClosedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "closedAtUtc");
+          final int _cursorIndexOfSyncStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "syncStatus");
           final List<OrderEntity> _result = new ArrayList<OrderEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final OrderEntity _item;
@@ -1873,8 +1972,419 @@ public final class RestaurantDao_Impl extends RestaurantDao {
             } else {
               _tmpClosedAtUtc = _cursor.getLong(_cursorIndexOfClosedAtUtc);
             }
-            _item = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc);
+            final String _tmpSyncStatus;
+            if (_cursor.isNull(_cursorIndexOfSyncStatus)) {
+              _tmpSyncStatus = null;
+            } else {
+              _tmpSyncStatus = _cursor.getString(_cursorIndexOfSyncStatus);
+            }
+            _item = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc,_tmpSyncStatus);
             _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getOrdersPendingSync(final Continuation<? super List<OrderEntity>> $completion) {
+    final String _sql = "SELECT * FROM orders WHERE syncStatus != 'SYNCED' ORDER BY createdAt";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<OrderEntity>>() {
+      @Override
+      @NonNull
+      public List<OrderEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfDiningTableId = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableId");
+          final int _cursorIndexOfDiningTableCode = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableCode");
+          final int _cursorIndexOfNumber = CursorUtil.getColumnIndexOrThrow(_cursor, "number");
+          final int _cursorIndexOfCustomerId = CursorUtil.getColumnIndexOrThrow(_cursor, "customerId");
+          final int _cursorIndexOfWaiterName = CursorUtil.getColumnIndexOrThrow(_cursor, "waiterName");
+          final int _cursorIndexOfDeviceId = CursorUtil.getColumnIndexOrThrow(_cursor, "deviceId");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOpenedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "openedAtUtc");
+          final int _cursorIndexOfSubtotal = CursorUtil.getColumnIndexOrThrow(_cursor, "subtotal");
+          final int _cursorIndexOfTaxAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "taxAmount");
+          final int _cursorIndexOfTotal = CursorUtil.getColumnIndexOrThrow(_cursor, "total");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfRemoteId = CursorUtil.getColumnIndexOrThrow(_cursor, "remoteId");
+          final int _cursorIndexOfClosedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "closedAtUtc");
+          final int _cursorIndexOfSyncStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "syncStatus");
+          final List<OrderEntity> _result = new ArrayList<OrderEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final OrderEntity _item;
+            final String _tmpId;
+            if (_cursor.isNull(_cursorIndexOfId)) {
+              _tmpId = null;
+            } else {
+              _tmpId = _cursor.getString(_cursorIndexOfId);
+            }
+            final String _tmpDiningTableId;
+            if (_cursor.isNull(_cursorIndexOfDiningTableId)) {
+              _tmpDiningTableId = null;
+            } else {
+              _tmpDiningTableId = _cursor.getString(_cursorIndexOfDiningTableId);
+            }
+            final String _tmpDiningTableCode;
+            if (_cursor.isNull(_cursorIndexOfDiningTableCode)) {
+              _tmpDiningTableCode = null;
+            } else {
+              _tmpDiningTableCode = _cursor.getString(_cursorIndexOfDiningTableCode);
+            }
+            final String _tmpNumber;
+            if (_cursor.isNull(_cursorIndexOfNumber)) {
+              _tmpNumber = null;
+            } else {
+              _tmpNumber = _cursor.getString(_cursorIndexOfNumber);
+            }
+            final String _tmpCustomerId;
+            if (_cursor.isNull(_cursorIndexOfCustomerId)) {
+              _tmpCustomerId = null;
+            } else {
+              _tmpCustomerId = _cursor.getString(_cursorIndexOfCustomerId);
+            }
+            final String _tmpWaiterName;
+            if (_cursor.isNull(_cursorIndexOfWaiterName)) {
+              _tmpWaiterName = null;
+            } else {
+              _tmpWaiterName = _cursor.getString(_cursorIndexOfWaiterName);
+            }
+            final String _tmpDeviceId;
+            if (_cursor.isNull(_cursorIndexOfDeviceId)) {
+              _tmpDeviceId = null;
+            } else {
+              _tmpDeviceId = _cursor.getString(_cursorIndexOfDeviceId);
+            }
+            final String _tmpStatus;
+            if (_cursor.isNull(_cursorIndexOfStatus)) {
+              _tmpStatus = null;
+            } else {
+              _tmpStatus = _cursor.getString(_cursorIndexOfStatus);
+            }
+            final long _tmpOpenedAtUtc;
+            _tmpOpenedAtUtc = _cursor.getLong(_cursorIndexOfOpenedAtUtc);
+            final double _tmpSubtotal;
+            _tmpSubtotal = _cursor.getDouble(_cursorIndexOfSubtotal);
+            final double _tmpTaxAmount;
+            _tmpTaxAmount = _cursor.getDouble(_cursorIndexOfTaxAmount);
+            final double _tmpTotal;
+            _tmpTotal = _cursor.getDouble(_cursorIndexOfTotal);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final String _tmpRemoteId;
+            if (_cursor.isNull(_cursorIndexOfRemoteId)) {
+              _tmpRemoteId = null;
+            } else {
+              _tmpRemoteId = _cursor.getString(_cursorIndexOfRemoteId);
+            }
+            final Long _tmpClosedAtUtc;
+            if (_cursor.isNull(_cursorIndexOfClosedAtUtc)) {
+              _tmpClosedAtUtc = null;
+            } else {
+              _tmpClosedAtUtc = _cursor.getLong(_cursorIndexOfClosedAtUtc);
+            }
+            final String _tmpSyncStatus;
+            if (_cursor.isNull(_cursorIndexOfSyncStatus)) {
+              _tmpSyncStatus = null;
+            } else {
+              _tmpSyncStatus = _cursor.getString(_cursorIndexOfSyncStatus);
+            }
+            _item = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc,_tmpSyncStatus);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getRemoteOrderIdForTable(final String tableId,
+      final Continuation<? super String> $completion) {
+    final String _sql = "SELECT remoteId FROM orders WHERE diningTableId = ? AND remoteId IS NOT NULL AND status != 'PAID' ORDER BY createdAt DESC LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    if (tableId == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, tableId);
+    }
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<String>() {
+      @Override
+      @Nullable
+      public String call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final String _result;
+          if (_cursor.moveToFirst()) {
+            if (_cursor.isNull(0)) {
+              _result = null;
+            } else {
+              _result = _cursor.getString(0);
+            }
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getOpenLocalOrderForTable(final String tableId,
+      final Continuation<? super OrderEntity> $completion) {
+    final String _sql = "SELECT * FROM orders WHERE diningTableId = ? AND status != 'PAID' AND (remoteId IS NULL OR remoteId = '') ORDER BY createdAt DESC LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    if (tableId == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, tableId);
+    }
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<OrderEntity>() {
+      @Override
+      @Nullable
+      public OrderEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfDiningTableId = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableId");
+          final int _cursorIndexOfDiningTableCode = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableCode");
+          final int _cursorIndexOfNumber = CursorUtil.getColumnIndexOrThrow(_cursor, "number");
+          final int _cursorIndexOfCustomerId = CursorUtil.getColumnIndexOrThrow(_cursor, "customerId");
+          final int _cursorIndexOfWaiterName = CursorUtil.getColumnIndexOrThrow(_cursor, "waiterName");
+          final int _cursorIndexOfDeviceId = CursorUtil.getColumnIndexOrThrow(_cursor, "deviceId");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOpenedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "openedAtUtc");
+          final int _cursorIndexOfSubtotal = CursorUtil.getColumnIndexOrThrow(_cursor, "subtotal");
+          final int _cursorIndexOfTaxAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "taxAmount");
+          final int _cursorIndexOfTotal = CursorUtil.getColumnIndexOrThrow(_cursor, "total");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfRemoteId = CursorUtil.getColumnIndexOrThrow(_cursor, "remoteId");
+          final int _cursorIndexOfClosedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "closedAtUtc");
+          final int _cursorIndexOfSyncStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "syncStatus");
+          final OrderEntity _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpId;
+            if (_cursor.isNull(_cursorIndexOfId)) {
+              _tmpId = null;
+            } else {
+              _tmpId = _cursor.getString(_cursorIndexOfId);
+            }
+            final String _tmpDiningTableId;
+            if (_cursor.isNull(_cursorIndexOfDiningTableId)) {
+              _tmpDiningTableId = null;
+            } else {
+              _tmpDiningTableId = _cursor.getString(_cursorIndexOfDiningTableId);
+            }
+            final String _tmpDiningTableCode;
+            if (_cursor.isNull(_cursorIndexOfDiningTableCode)) {
+              _tmpDiningTableCode = null;
+            } else {
+              _tmpDiningTableCode = _cursor.getString(_cursorIndexOfDiningTableCode);
+            }
+            final String _tmpNumber;
+            if (_cursor.isNull(_cursorIndexOfNumber)) {
+              _tmpNumber = null;
+            } else {
+              _tmpNumber = _cursor.getString(_cursorIndexOfNumber);
+            }
+            final String _tmpCustomerId;
+            if (_cursor.isNull(_cursorIndexOfCustomerId)) {
+              _tmpCustomerId = null;
+            } else {
+              _tmpCustomerId = _cursor.getString(_cursorIndexOfCustomerId);
+            }
+            final String _tmpWaiterName;
+            if (_cursor.isNull(_cursorIndexOfWaiterName)) {
+              _tmpWaiterName = null;
+            } else {
+              _tmpWaiterName = _cursor.getString(_cursorIndexOfWaiterName);
+            }
+            final String _tmpDeviceId;
+            if (_cursor.isNull(_cursorIndexOfDeviceId)) {
+              _tmpDeviceId = null;
+            } else {
+              _tmpDeviceId = _cursor.getString(_cursorIndexOfDeviceId);
+            }
+            final String _tmpStatus;
+            if (_cursor.isNull(_cursorIndexOfStatus)) {
+              _tmpStatus = null;
+            } else {
+              _tmpStatus = _cursor.getString(_cursorIndexOfStatus);
+            }
+            final long _tmpOpenedAtUtc;
+            _tmpOpenedAtUtc = _cursor.getLong(_cursorIndexOfOpenedAtUtc);
+            final double _tmpSubtotal;
+            _tmpSubtotal = _cursor.getDouble(_cursorIndexOfSubtotal);
+            final double _tmpTaxAmount;
+            _tmpTaxAmount = _cursor.getDouble(_cursorIndexOfTaxAmount);
+            final double _tmpTotal;
+            _tmpTotal = _cursor.getDouble(_cursorIndexOfTotal);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final String _tmpRemoteId;
+            if (_cursor.isNull(_cursorIndexOfRemoteId)) {
+              _tmpRemoteId = null;
+            } else {
+              _tmpRemoteId = _cursor.getString(_cursorIndexOfRemoteId);
+            }
+            final Long _tmpClosedAtUtc;
+            if (_cursor.isNull(_cursorIndexOfClosedAtUtc)) {
+              _tmpClosedAtUtc = null;
+            } else {
+              _tmpClosedAtUtc = _cursor.getLong(_cursorIndexOfClosedAtUtc);
+            }
+            final String _tmpSyncStatus;
+            if (_cursor.isNull(_cursorIndexOfSyncStatus)) {
+              _tmpSyncStatus = null;
+            } else {
+              _tmpSyncStatus = _cursor.getString(_cursorIndexOfSyncStatus);
+            }
+            _result = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc,_tmpSyncStatus);
+          } else {
+            _result = null;
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getOrderByRemoteId(final String remoteId,
+      final Continuation<? super OrderEntity> $completion) {
+    final String _sql = "SELECT * FROM orders WHERE remoteId = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    if (remoteId == null) {
+      _statement.bindNull(_argIndex);
+    } else {
+      _statement.bindString(_argIndex, remoteId);
+    }
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<OrderEntity>() {
+      @Override
+      @Nullable
+      public OrderEntity call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfDiningTableId = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableId");
+          final int _cursorIndexOfDiningTableCode = CursorUtil.getColumnIndexOrThrow(_cursor, "diningTableCode");
+          final int _cursorIndexOfNumber = CursorUtil.getColumnIndexOrThrow(_cursor, "number");
+          final int _cursorIndexOfCustomerId = CursorUtil.getColumnIndexOrThrow(_cursor, "customerId");
+          final int _cursorIndexOfWaiterName = CursorUtil.getColumnIndexOrThrow(_cursor, "waiterName");
+          final int _cursorIndexOfDeviceId = CursorUtil.getColumnIndexOrThrow(_cursor, "deviceId");
+          final int _cursorIndexOfStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "status");
+          final int _cursorIndexOfOpenedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "openedAtUtc");
+          final int _cursorIndexOfSubtotal = CursorUtil.getColumnIndexOrThrow(_cursor, "subtotal");
+          final int _cursorIndexOfTaxAmount = CursorUtil.getColumnIndexOrThrow(_cursor, "taxAmount");
+          final int _cursorIndexOfTotal = CursorUtil.getColumnIndexOrThrow(_cursor, "total");
+          final int _cursorIndexOfCreatedAt = CursorUtil.getColumnIndexOrThrow(_cursor, "createdAt");
+          final int _cursorIndexOfRemoteId = CursorUtil.getColumnIndexOrThrow(_cursor, "remoteId");
+          final int _cursorIndexOfClosedAtUtc = CursorUtil.getColumnIndexOrThrow(_cursor, "closedAtUtc");
+          final int _cursorIndexOfSyncStatus = CursorUtil.getColumnIndexOrThrow(_cursor, "syncStatus");
+          final OrderEntity _result;
+          if (_cursor.moveToFirst()) {
+            final String _tmpId;
+            if (_cursor.isNull(_cursorIndexOfId)) {
+              _tmpId = null;
+            } else {
+              _tmpId = _cursor.getString(_cursorIndexOfId);
+            }
+            final String _tmpDiningTableId;
+            if (_cursor.isNull(_cursorIndexOfDiningTableId)) {
+              _tmpDiningTableId = null;
+            } else {
+              _tmpDiningTableId = _cursor.getString(_cursorIndexOfDiningTableId);
+            }
+            final String _tmpDiningTableCode;
+            if (_cursor.isNull(_cursorIndexOfDiningTableCode)) {
+              _tmpDiningTableCode = null;
+            } else {
+              _tmpDiningTableCode = _cursor.getString(_cursorIndexOfDiningTableCode);
+            }
+            final String _tmpNumber;
+            if (_cursor.isNull(_cursorIndexOfNumber)) {
+              _tmpNumber = null;
+            } else {
+              _tmpNumber = _cursor.getString(_cursorIndexOfNumber);
+            }
+            final String _tmpCustomerId;
+            if (_cursor.isNull(_cursorIndexOfCustomerId)) {
+              _tmpCustomerId = null;
+            } else {
+              _tmpCustomerId = _cursor.getString(_cursorIndexOfCustomerId);
+            }
+            final String _tmpWaiterName;
+            if (_cursor.isNull(_cursorIndexOfWaiterName)) {
+              _tmpWaiterName = null;
+            } else {
+              _tmpWaiterName = _cursor.getString(_cursorIndexOfWaiterName);
+            }
+            final String _tmpDeviceId;
+            if (_cursor.isNull(_cursorIndexOfDeviceId)) {
+              _tmpDeviceId = null;
+            } else {
+              _tmpDeviceId = _cursor.getString(_cursorIndexOfDeviceId);
+            }
+            final String _tmpStatus;
+            if (_cursor.isNull(_cursorIndexOfStatus)) {
+              _tmpStatus = null;
+            } else {
+              _tmpStatus = _cursor.getString(_cursorIndexOfStatus);
+            }
+            final long _tmpOpenedAtUtc;
+            _tmpOpenedAtUtc = _cursor.getLong(_cursorIndexOfOpenedAtUtc);
+            final double _tmpSubtotal;
+            _tmpSubtotal = _cursor.getDouble(_cursorIndexOfSubtotal);
+            final double _tmpTaxAmount;
+            _tmpTaxAmount = _cursor.getDouble(_cursorIndexOfTaxAmount);
+            final double _tmpTotal;
+            _tmpTotal = _cursor.getDouble(_cursorIndexOfTotal);
+            final long _tmpCreatedAt;
+            _tmpCreatedAt = _cursor.getLong(_cursorIndexOfCreatedAt);
+            final String _tmpRemoteId;
+            if (_cursor.isNull(_cursorIndexOfRemoteId)) {
+              _tmpRemoteId = null;
+            } else {
+              _tmpRemoteId = _cursor.getString(_cursorIndexOfRemoteId);
+            }
+            final Long _tmpClosedAtUtc;
+            if (_cursor.isNull(_cursorIndexOfClosedAtUtc)) {
+              _tmpClosedAtUtc = null;
+            } else {
+              _tmpClosedAtUtc = _cursor.getLong(_cursorIndexOfClosedAtUtc);
+            }
+            final String _tmpSyncStatus;
+            if (_cursor.isNull(_cursorIndexOfSyncStatus)) {
+              _tmpSyncStatus = null;
+            } else {
+              _tmpSyncStatus = _cursor.getString(_cursorIndexOfSyncStatus);
+            }
+            _result = new OrderEntity(_tmpId,_tmpDiningTableId,_tmpDiningTableCode,_tmpNumber,_tmpCustomerId,_tmpWaiterName,_tmpDeviceId,_tmpStatus,_tmpOpenedAtUtc,_tmpSubtotal,_tmpTaxAmount,_tmpTotal,_tmpCreatedAt,_tmpRemoteId,_tmpClosedAtUtc,_tmpSyncStatus);
+          } else {
+            _result = null;
           }
           return _result;
         } finally {
@@ -2127,6 +2637,45 @@ public final class RestaurantDao_Impl extends RestaurantDao {
         } finally {
           _cursor.close();
           _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object markOrdersPaid(final List<String> ids, final long closedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final StringBuilder _stringBuilder = StringUtil.newStringBuilder();
+        _stringBuilder.append("UPDATE orders SET status = 'PAID', closedAtUtc = ");
+        _stringBuilder.append("?");
+        _stringBuilder.append(" WHERE id IN (");
+        final int _inputSize = ids.size();
+        StringUtil.appendPlaceholders(_stringBuilder, _inputSize);
+        _stringBuilder.append(")");
+        final String _sql = _stringBuilder.toString();
+        final SupportSQLiteStatement _stmt = __db.compileStatement(_sql);
+        int _argIndex = 1;
+        _stmt.bindLong(_argIndex, closedAt);
+        _argIndex = 2;
+        for (String _item : ids) {
+          if (_item == null) {
+            _stmt.bindNull(_argIndex);
+          } else {
+            _stmt.bindString(_argIndex, _item);
+          }
+          _argIndex++;
+        }
+        __db.beginTransaction();
+        try {
+          _stmt.executeUpdateDelete();
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
         }
       }
     }, $completion);

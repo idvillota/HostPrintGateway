@@ -33,7 +33,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(4) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `print_jobs` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `payloadFormat` TEXT NOT NULL, `payload` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))");
@@ -46,11 +46,11 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `product_bundle_lines` (`id` TEXT NOT NULL, `productId` TEXT NOT NULL, `componentProductId` TEXT NOT NULL, `quantity` REAL NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `printer_stations` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `code` TEXT NOT NULL, `bluetoothMac` TEXT NOT NULL, `isActive` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `product_type_printer_mappings` (`id` TEXT NOT NULL, `productTypeId` TEXT NOT NULL, `printerStationId` TEXT NOT NULL, PRIMARY KEY(`id`))");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `orders` (`id` TEXT NOT NULL, `diningTableId` TEXT, `diningTableCode` TEXT NOT NULL, `number` TEXT NOT NULL, `customerId` TEXT, `waiterName` TEXT NOT NULL, `deviceId` TEXT NOT NULL, `status` TEXT NOT NULL, `openedAtUtc` INTEGER NOT NULL, `subtotal` REAL NOT NULL, `taxAmount` REAL NOT NULL, `total` REAL NOT NULL, `createdAt` INTEGER NOT NULL, `remoteId` TEXT, `closedAtUtc` INTEGER, PRIMARY KEY(`id`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `orders` (`id` TEXT NOT NULL, `diningTableId` TEXT, `diningTableCode` TEXT NOT NULL, `number` TEXT NOT NULL, `customerId` TEXT, `waiterName` TEXT NOT NULL, `deviceId` TEXT NOT NULL, `status` TEXT NOT NULL, `openedAtUtc` INTEGER NOT NULL, `subtotal` REAL NOT NULL, `taxAmount` REAL NOT NULL, `total` REAL NOT NULL, `createdAt` INTEGER NOT NULL, `remoteId` TEXT, `closedAtUtc` INTEGER, `syncStatus` TEXT NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `order_items` (`id` TEXT NOT NULL, `orderId` TEXT NOT NULL, `productId` TEXT NOT NULL, `productName` TEXT NOT NULL, `quantity` REAL NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, `unitCostPrice` REAL, `notes` TEXT NOT NULL, `sentToKitchenAtUtc` INTEGER, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `kitchen_tickets` (`id` TEXT NOT NULL, `orderId` TEXT NOT NULL, `printerStationId` TEXT, `payload` TEXT NOT NULL, `status` TEXT NOT NULL, `isPrinted` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `lastError` TEXT, `createdAt` INTEGER NOT NULL, `printedAt` INTEGER, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '30aa8d28abadc08de51e68059691a4d1')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4318cf788fde23ce86975737d51ff0e1')");
       }
 
       @Override
@@ -270,7 +270,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
                   + " Expected:\n" + _infoProductTypePrinterMappings + "\n"
                   + " Found:\n" + _existingProductTypePrinterMappings);
         }
-        final HashMap<String, TableInfo.Column> _columnsOrders = new HashMap<String, TableInfo.Column>(15);
+        final HashMap<String, TableInfo.Column> _columnsOrders = new HashMap<String, TableInfo.Column>(16);
         _columnsOrders.put("id", new TableInfo.Column("id", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsOrders.put("diningTableId", new TableInfo.Column("diningTableId", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsOrders.put("diningTableCode", new TableInfo.Column("diningTableCode", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
@@ -286,6 +286,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
         _columnsOrders.put("createdAt", new TableInfo.Column("createdAt", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsOrders.put("remoteId", new TableInfo.Column("remoteId", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsOrders.put("closedAtUtc", new TableInfo.Column("closedAtUtc", "INTEGER", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsOrders.put("syncStatus", new TableInfo.Column("syncStatus", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysOrders = new HashSet<TableInfo.ForeignKey>(0);
         final HashSet<TableInfo.Index> _indicesOrders = new HashSet<TableInfo.Index>(0);
         final TableInfo _infoOrders = new TableInfo("orders", _columnsOrders, _foreignKeysOrders, _indicesOrders);
@@ -337,7 +338,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "30aa8d28abadc08de51e68059691a4d1", "0aa2c152899540e055ec5247e117935d");
+    }, "4318cf788fde23ce86975737d51ff0e1", "ee232db2d68b5d69f2f24b0fb8fa60fa");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
