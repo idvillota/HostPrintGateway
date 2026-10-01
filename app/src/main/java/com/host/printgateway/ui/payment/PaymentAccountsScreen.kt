@@ -62,15 +62,15 @@ fun PaymentAccountsScreen(
                         ) {
                             Text(text = "Mesa ${account.tableCode}", style = MaterialTheme.typography.titleLarge)
                             Text(
-                                text = if (account.orderCount == 1) {
-                                    "1 comanda"
-                                } else {
-                                    "${account.orderCount} comandas"
+                                text = when (account.orderCount) {
+                                    0 -> "Ocupada, cuenta pendiente"
+                                    1 -> "1 comanda"
+                                    else -> "${account.orderCount} comandas"
                                 },
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = formatPrice(account.total),
+                                text = if (account.orderCount == 0) "Sin productos locales" else formatPrice(account.total),
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.titleMedium,
                             )

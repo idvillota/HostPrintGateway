@@ -32,6 +32,7 @@ class SaleChannel(
     suspend fun listen(
         onSale: (RemoteSale) -> Unit,
         onConnected: () -> Unit,
+        onTablesAvailable: (List<String>) -> Unit = {},
     ): SaleListenEnd = suspendCancellableCoroutine { continuation ->
         val finished = AtomicBoolean(false)
         fun finish(end: SaleListenEnd) {
@@ -51,6 +52,16 @@ class SaleChannel(
             override fun onMessage(webSocket: WebSocket, text: String) {
                 val json = runCatching { JSONObject(text) }.getOrNull() ?: return
                 val type = json.optString("type")
+                if (type.equals("tablesAvailable", ignoreCase = true)) {
+                    val ids = json.optJSONArray("tableIds") ?: return
+                    val tables = buildList {
+                        for (index in 0 until ids.length()) {
+                            ids.optString(index).takeIf { it.isNotBlank() }?.let(::add)
+                        }
+                    }
+                    if (tables.isNotEmpty()) onTablesAvailable(tables)
+                    return
+                }
                 if (type.equals("sale", ignoreCase = true) || json.has("remoteOrderId") || json.has("orderId")) {
                     onSale(MobileSyncApi.parseSale(json))
                 }

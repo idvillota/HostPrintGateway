@@ -203,6 +203,56 @@ class RestaurantRepository(
 
     private companion object {
         const val REMOTE_ITEM_PREFIX = "remote:"
+        const val PAYMENT_PREFIX = "PAY|"
+    }
+
+    suspend fun markPaidForSync(orderIds: List<String>, paymentMethod: String, tip: Double) {
+        val method = paymentMethod.replace("|", " ").ifBlank { "Efectivo" }
+        val marker = PAYMENT_PREFIX + method + "|" + String.format(Locale.US, "%.2f", tip)
+        val tableIds = orderIds.mapNotNull { dao.getOrder(it)?.diningTableId }
+        dao.markOrdersPaid(orderIds, System.currentTimeMillis(), marker)
+        freeSettledTables(tableIds)
+    }
+
+    suspend fun closeOrdersOnFreeHostTables() {
+        val freeTableIds = dao.getTables().filterNot { it.isOccupied() }.map { it.id }.toSet()
+        val staleIds = dao.getUnpaidOrders()
+            .filter { order -> order.diningTableId == null || order.diningTableId in freeTableIds }
+            .map { it.id }
+        if (staleIds.isEmpty()) return
+        dao.markOrdersPaid(staleIds, System.currentTimeMillis(), RestaurantStatuses.SYNC_STATE_SYNCED)
+    }
+
+    suspend fun releaseTablesSettledOnHost(baseUrl: String): Result<Boolean> = runCatching {
+        val summaries = CatalogApi(baseUrl, deviceToken).fetchTableAccounts().getOrThrow()
+        val freeIds = summaries
+            .filter { it.openOrderId.isNullOrBlank() }
+            .map { it.tableId.lowercase() }
+            .toSet()
+        closeAccountsOnFreeTables(freeIds)
+    }
+
+    suspend fun releaseNotifiedTables(tableIds: List<String>): Boolean =
+        closeAccountsOnFreeTables(tableIds.map { it.lowercase() }.toSet())
+
+    private suspend fun closeAccountsOnFreeTables(freeIds: Set<String>): Boolean {
+        if (freeIds.isEmpty()) return false
+        fun isFree(tableId: String?) = tableId != null && tableId.lowercase() in freeIds
+        val staleIds = dao.getUnpaidOrders()
+            .filter { order -> isFree(order.diningTableId) && !order.remoteId.isNullOrBlank() }
+            .map { it.id }
+        if (staleIds.isNotEmpty()) {
+            dao.markOrdersPaid(staleIds, System.currentTimeMillis(), RestaurantStatuses.SYNC_STATE_SYNCED)
+        }
+        var statusChanged = false
+        dao.getTables().filter { table -> isFree(table.id) && table.isOccupied() }.forEach { table ->
+            val stillUnpaid = dao.getUnpaidOrders().any { it.diningTableId.equals(table.id, ignoreCase = true) }
+            if (!stillUnpaid) {
+                dao.updateTableStatus(table.id, "0")
+                statusChanged = true
+            }
+        }
+        return staleIds.isNotEmpty() || statusChanged
     }
 
     suspend fun syncPendingOrders(
@@ -210,10 +260,113 @@ class RestaurantRepository(
         deviceId: String,
     ): Result<Int> = runCatching {
         val pending = dao.getOrdersPendingSync()
-        if (pending.isEmpty()) return@runCatching 0
+        val errors = mutableListOf<String>()
+        if (pending.isEmpty()) {
+            healOccupiedTables(baseUrl, deviceId, errors)
+            if (errors.isNotEmpty()) error(errors.distinct().joinToString(" "))
+            return@runCatching 0
+        }
 
+        val paymentOrders = pending.filter { it.syncStatus.startsWith(PAYMENT_PREFIX) }
+        val lineOrders = pending.filterNot { it.syncStatus.startsWith(PAYMENT_PREFIX) }
+        var synced = uploadOrderLines(baseUrl, deviceId, lineOrders, preservePayment = false, errors = errors)
+
+        paymentOrders.groupBy { it.diningTableId ?: it.id }.values.forEach { group ->
+            val errorsBefore = errors.size
+            uploadOrderLines(baseUrl, deviceId, group, preservePayment = true, errors = errors)
+            if (errors.size > errorsBefore) return@forEach
+            val current = group.map { dao.getOrder(it.id) ?: it }
+            val remoteIds = current.mapNotNull { it.remoteId?.takeIf(String::isNotBlank) }
+            if (remoteIds.size != current.size) {
+                errors += "La comanda de la mesa ${group.first().diningTableCode} todavía no está en HOST."
+                return@forEach
+            }
+            val marker = group.first().syncStatus.removePrefix(PAYMENT_PREFIX).split("|")
+            val method = marker.dropLast(1).joinToString("|").ifBlank { "Efectivo" }
+            val tip = marker.lastOrNull()?.toDoubleOrNull() ?: 0.0
+            val paid = MobileSyncApi(baseUrl, deviceToken).uploadPayment(
+                deviceId = deviceId,
+                remoteIds = remoteIds,
+                paymentMethod = method,
+                tipAmount = tip,
+            ).getOrThrow()
+            if (paid.synced) {
+                current.forEach { order ->
+                    dao.markOrderSynced(order.id, order.remoteId.orEmpty())
+                }
+                if (paid.tablesAvailable) {
+                    freeSettledTables(current.mapNotNull { it.diningTableId })
+                } else {
+                    errors += "La mesa ${group.first().diningTableCode} sigue ocupada en HOST."
+                }
+                synced += current.size
+            } else {
+                errors += paid.error.ifBlank { "HOST rechazó el cobro." }
+            }
+        }
+
+        healOccupiedTables(baseUrl, deviceId, errors)
+        if (errors.isNotEmpty()) error(errors.distinct().joinToString(" "))
+        synced
+    }
+
+    private suspend fun healOccupiedTables(
+        baseUrl: String,
+        deviceId: String,
+        errors: MutableList<String>,
+    ) {
+        val unpaidTableIds = dao.getUnpaidOrders().mapNotNull { it.diningTableId }.toSet()
+        val stuck = dao.getTables().filter { it.isOccupied() && it.id !in unpaidTableIds }
+        if (stuck.isEmpty()) return
+        val paidByTable = dao.getOrders()
+            .filter {
+                it.status == RestaurantStatuses.ORDER_PAID &&
+                    it.syncStatus == RestaurantStatuses.SYNC_STATE_SYNCED &&
+                    !it.remoteId.isNullOrBlank()
+            }
+            .groupBy { it.diningTableId }
+        val api = MobileSyncApi(baseUrl, deviceToken)
+        stuck.forEach { table ->
+            val remoteIds = paidByTable[table.id].orEmpty().mapNotNull { it.remoteId }.distinct()
+            if (remoteIds.isEmpty()) return@forEach
+            val paid = runCatching {
+                api.uploadPayment(
+                    deviceId = deviceId,
+                    remoteIds = remoteIds,
+                    paymentMethod = "Efectivo",
+                    tipAmount = 0.0,
+                ).getOrThrow()
+            }
+            paid.onSuccess { result ->
+                if (result.synced && result.tablesAvailable) {
+                    dao.updateTableStatus(table.id, "0")
+                } else if (!result.synced && result.error.isNotBlank()) {
+                    errors += "Mesa ${table.code}: ${result.error}"
+                }
+            }.onFailure { failure ->
+                errors += "Mesa ${table.code}: ${failure.message ?: "No se pudo liberar la mesa."}"
+            }
+        }
+    }
+
+    private suspend fun freeSettledTables(tableIds: List<String>) {
+        tableIds.distinct().forEach { tableId ->
+            val stillOpen = dao.getUnpaidOrders().any { it.diningTableId == tableId }
+            if (!stillOpen) dao.updateTableStatus(tableId, "0")
+        }
+    }
+
+    private suspend fun uploadOrderLines(
+        baseUrl: String,
+        deviceId: String,
+        orders: List<OrderEntity>,
+        preservePayment: Boolean,
+        errors: MutableList<String>,
+    ): Int {
+        if (orders.isEmpty()) return 0
         val ready = mutableListOf<Pair<OrderEntity, List<AddOrderLineRequest>>>()
-        pending.forEach { order ->
+        var synced = 0
+        orders.forEach { order ->
             val localLines = dao.getOrderItems(order.id)
                 .filter { !it.id.startsWith(REMOTE_ITEM_PREFIX) }
                 .map {
@@ -224,29 +377,53 @@ class RestaurantRepository(
                     )
                 }
             if (localLines.isEmpty() && !order.remoteId.isNullOrBlank()) {
-                dao.markOrderSynced(order.id, order.remoteId)
+                if (!preservePayment) {
+                    dao.markOrderSynced(order.id, order.remoteId)
+                    synced++
+                }
             } else if (localLines.isNotEmpty()) {
                 ready += order to localLines
             }
         }
-        if (ready.isEmpty()) return@runCatching 0
+        if (ready.isEmpty()) return synced
 
-        val api = MobileSyncApi(baseUrl, deviceToken)
-        val response = api.uploadBatch(
-            deviceId = deviceId,
-            orders = ready,
-        ).getOrThrow()
-
-        var synced = 0
+        val response = MobileSyncApi(baseUrl, deviceToken)
+            .uploadBatch(deviceId, ready)
+            .getOrThrow()
+        val errorCountBefore = errors.size
         response.forEach { result ->
             if (result.synced && result.remoteId.isNotBlank()) {
-                dao.markOrderSynced(result.localId, result.remoteId)
-                synced++
-            } else if (!result.synced) {
-                dao.markOrderSyncFailed(result.localId)
+                if (preservePayment) {
+                    dao.saveRemoteOrderId(result.localId, result.remoteId)
+                } else {
+                    dao.markOrderSynced(result.localId, result.remoteId)
+                    synced++
+                }
+            } else if (!result.synced && !(preservePayment && result.error.contains("ya está cerrado"))) {
+                if (!preservePayment) dao.markOrderSyncFailed(result.localId)
+                errors += result.error.ifBlank { "HOST rechazó la comanda." }
             }
         }
-        synced
+        if (preservePayment && errors.size > errorCountBefore) return synced
+        return synced
+    }
+
+    suspend fun catchUpOpenAccounts(
+        baseUrl: String,
+        deviceId: String,
+        since: String,
+    ): Result<String> = runCatching {
+        val cursor = pullMissedSales(baseUrl, deviceId, since).getOrThrow()
+        if (!hasOccupiedTableWithoutBill()) {
+            return@runCatching cursor.ifBlank { since }
+        }
+        val full = pullMissedSales(baseUrl, deviceId, "").getOrThrow()
+        full.ifBlank { cursor.ifBlank { since } }
+    }
+
+    private suspend fun hasOccupiedTableWithoutBill(): Boolean {
+        val billedTableIds = dao.getUnpaidOrders().mapNotNull { it.diningTableId }.toSet()
+        return dao.getTables().any { table -> table.isOccupied() && table.id !in billedTableIds }
     }
 
     suspend fun pullMissedSales(

@@ -9,25 +9,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 private val HostColors = lightColorScheme(
-    primary = Color(0xFF1F6F5B),
+    primary = Color(0xFFEA580C),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD7EFE6),
-    onPrimaryContainer = Color(0xFF0E3D32),
-    secondary = Color(0xFF8C5A3C),
+    primaryContainer = Color(0xFFFFF4E6),
+    onPrimaryContainer = Color(0xFF9A3412),
+    secondary = Color(0xFF495057),
     onSecondary = Color.White,
-    background = Color(0xFFF6F4F1),
-    onBackground = Color(0xFF1C1B19),
+    background = Color(0xFFF8F9FA),
+    onBackground = Color(0xFF212529),
     surface = Color.White,
-    onSurface = Color(0xFF1C1B19),
-    surfaceVariant = Color(0xFFE7E2DA),
-    onSurfaceVariant = Color(0xFF5C574F),
-    outline = Color(0xFFD0CBC3),
+    onSurface = Color(0xFF212529),
+    surfaceVariant = Color(0xFFF1F3F5),
+    onSurfaceVariant = Color(0xFF868E96),
+    outline = Color(0xFFDEE2E6),
+    error = Color(0xFFFA5252),
 )
 
 private val HostShapes = Shapes(
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(12.dp),
+    large = RoundedCornerShape(16.dp),
 )
 
 @Composable

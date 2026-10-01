@@ -34,6 +34,8 @@ data class BatchOrderResult(
     val localId: String,
     val remoteId: String,
     val synced: Boolean,
+    val error: String = "",
+    val tablesAvailable: Boolean = false,
 )
 
 data class PendingSalesPage(
@@ -86,19 +88,48 @@ class MobileSyncApi(
             .put("orders", payloadOrders)
             .toString()
         val response = request("POST", "/api/mobile-sync/batches", body)
-        val results = JSONObject(response).optJSONArray("results") ?: JSONArray()
+        val root = JSONObject(response)
+        val results = root.optJSONArray("results") ?: root.optJSONArray("Results") ?: JSONArray()
         buildList {
             for (index in 0 until results.length()) {
                 val item = results.getJSONObject(index)
+                val status = item.optString("status").ifBlank { item.optString("Status") }
                 add(
                     BatchOrderResult(
-                        localId = item.optString("localId"),
-                        remoteId = item.optString("remoteId"),
-                        synced = item.optString("status").equals("synced", ignoreCase = true),
+                        localId = item.optString("localId").ifBlank { item.optString("LocalId") },
+                        remoteId = item.optString("remoteId").ifBlank { item.optString("RemoteId") },
+                        synced = status.equals("synced", ignoreCase = true),
+                        error = item.optString("error").ifBlank { item.optString("Error") },
                     ),
                 )
             }
         }
+    }
+
+    fun uploadPayment(
+        deviceId: String,
+        remoteIds: List<String>,
+        paymentMethod: String,
+        tipAmount: Double,
+    ): Result<BatchOrderResult> = runCatching {
+        val ids = JSONArray()
+        remoteIds.forEach { ids.put(it) }
+        val body = JSONObject()
+            .put("deviceId", deviceId)
+            .put("remoteIds", ids)
+            .put("paymentMethod", paymentMethod)
+            .put("tipAmount", tipAmount)
+            .toString()
+        val response = request("POST", "/api/mobile-sync/payments", body)
+        val root = JSONObject(response)
+        val status = root.optString("status").ifBlank { root.optString("Status") }
+        BatchOrderResult(
+            localId = "",
+            remoteId = "",
+            synced = status.equals("synced", ignoreCase = true),
+            error = root.optString("error").ifBlank { root.optString("Error") },
+            tablesAvailable = root.optBoolean("tablesAvailable", root.optBoolean("TablesAvailable", false)),
+        )
     }
 
     fun fetchPendingSales(deviceId: String, since: String): Result<PendingSalesPage> = runCatching {

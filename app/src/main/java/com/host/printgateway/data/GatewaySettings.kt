@@ -38,6 +38,10 @@ class GatewaySettings(context: Context) {
         get() = prefs.getString(KEY_SALE_CURSOR, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_SALE_CURSOR, value).apply()
 
+    var offlineMode: Boolean
+        get() = prefs.getBoolean(KEY_OFFLINE_MODE, false)
+        set(value) = prefs.edit().putBoolean(KEY_OFFLINE_MODE, value).apply()
+
     fun isConfigured(): Boolean =
         apiBaseUrl.isNotBlank() && deviceToken.isNotBlank() && printerMac.isNotBlank()
 
@@ -52,6 +56,7 @@ class GatewaySettings(context: Context) {
         private const val KEY_AUTO_SYNC = "auto_sync_enabled"
         private const val KEY_AUTO_SYNC_MS = "auto_sync_interval_ms"
         private const val KEY_SALE_CURSOR = "sale_cursor"
+        private const val KEY_OFFLINE_MODE = "offline_mode"
         const val DEFAULT_API_URL = "http://10.0.2.2:5228"
         const val DEFAULT_POLL_MS = 3_000L
         const val DEFAULT_AUTO_SYNC_MS = 15 * 60 * 1000L

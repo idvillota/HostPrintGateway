@@ -1,5 +1,6 @@
 package com.host.printgateway.ui.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +17,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,8 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.PrintJobEntity
+import com.host.printgateway.ui.order.formatPrice
 import com.host.printgateway.printer.BluetoothEscPosPrinter
 import com.host.printgateway.printer.EscPosReceiptFormatter
 import com.host.printgateway.ui.RoomDebugPanel
@@ -52,7 +56,12 @@ fun SettingsScreen(
     autoSyncEnabled: Boolean,
     autoSyncIntervalMinutes: Int,
     onToggleAutoSync: () -> Unit,
+    offlineMode: Boolean,
+    offlineBusy: Boolean,
+    onToggleOffline: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
+
     val scope = rememberCoroutineScope()
     var showAdvanced by remember { mutableStateOf(false) }
     var manualXml by remember { mutableStateOf("") }
@@ -97,6 +106,28 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(if (autoSyncEnabled) "Desactivar sincronización" else "Activar sincronización")
+            }
+            Text(
+                text = if (offlineMode) {
+                    "Modo sin internet activo. Pedidos y cobros quedan en el celular."
+                } else {
+                    "Modo sin internet desactivado."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onToggleOffline,
+                enabled = signedIn && !offlineBusy,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    when {
+                        offlineBusy -> "Sincronizando…"
+                        offlineMode -> "Desactivar modo sin internet"
+                        else -> "Activar modo sin internet"
+                    },
+                )
             }
 
             SectionTitle("Impresora")
@@ -174,6 +205,7 @@ fun SettingsScreen(
                 Text(if (showAdvanced) "Ocultar herramientas" else "Herramientas avanzadas")
             }
             if (showAdvanced) {
+                val adminOpen = manualXml.trim() == ADMIN_PASSWORD
                 RoomDebugPanel(database = database)
                 OutlinedTextField(
                     value = manualXml,
@@ -210,10 +242,16 @@ fun SettingsScreen(
                             }
                         }
                     },
-                    enabled = manualXml.isNotBlank(),
+                    enabled = manualXml.isNotBlank() && !adminOpen,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Insertar XML en Room")
+                }
+                if (adminOpen) {
+                    LocalSalesAdmin(
+                        database = database,
+                        onStatus = onStatus,
+                    )
                 }
             }
 
@@ -223,6 +261,91 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.secondary,
                     style = MaterialTheme.typography.bodyMedium,
                 )
+            }
+        }
+    }
+}
+
+private const val ADMIN_PASSWORD = "GVD06"
+
+@Composable
+private fun LocalSalesAdmin(
+    database: PrintGatewayDatabase,
+    onStatus: (String) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val dao = remember(database) { database.restaurantDao() }
+    var orders by remember { mutableStateOf(emptyList<OrderEntity>()) }
+    var busy by remember { mutableStateOf(false) }
+
+    suspend fun reload() {
+        orders = withContext(Dispatchers.IO) { dao.getOrdersMissingOnHost() }
+    }
+
+    LaunchedEffect(Unit) {
+        reload()
+    }
+
+    suspend fun remove(orderIds: List<String>) {
+        withContext(Dispatchers.IO) {
+            val tableIds = orders.filter { it.id in orderIds }.mapNotNull { it.diningTableId }.distinct()
+            orderIds.forEach { dao.deleteLocalOnlyOrder(it) }
+            tableIds.forEach { tableId ->
+                val stillOpen = dao.getUnpaidOrders().any { it.diningTableId == tableId }
+                if (!stillOpen) dao.updateTableStatus(tableId, "0")
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Ventas solo en este celular",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            text = "Estas comandas no tienen pedido en HOST. Quitarlas no cambia la web.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (orders.isEmpty()) {
+            Text(
+                text = "No hay ventas locales fuera de HOST.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            orders.forEach { order ->
+                OutlinedButton(
+                    onClick = {
+                        busy = true
+                        scope.launch {
+                            remove(listOf(order.id))
+                            reload()
+                            busy = false
+                            onStatus("Venta local de la mesa ${order.diningTableCode} retirada.")
+                        }
+                    },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Quitar mesa ${order.diningTableCode} · ${formatPrice(order.total)}")
+                }
+            }
+            OutlinedButton(
+                onClick = {
+                    busy = true
+                    scope.launch {
+                        val count = orders.size
+                        remove(orders.map { it.id })
+                        reload()
+                        busy = false
+                        onStatus("Se retiraron $count ventas locales.")
+                    }
+                },
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Quitar todas")
             }
         }
     }

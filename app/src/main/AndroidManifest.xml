@@ -14,8 +14,9 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:label="Host Print Gateway"
+        android:icon="@drawable/host_logo"
+        android:roundIcon="@drawable/host_logo"
+        android:label="Host Lite"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">

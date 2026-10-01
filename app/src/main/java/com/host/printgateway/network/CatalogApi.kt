@@ -9,6 +9,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 
 data class RemoteTable(val id: String, val code: String, val capacity: Int, val zone: String, val status: String, val isActive: Boolean)
+data class RemoteTableAccount(val tableId: String, val openOrderId: String?)
 data class RemoteProductType(val id: String, val name: String, val description: String?, val sortOrder: Int, val isActive: Boolean)
 data class RemoteProduct(val id: String, val productTypeId: String, val compositionType: String, val name: String, val description: String?, val sku: String?, val imagePath: String?, val unitPrice: Double, val isActive: Boolean)
 data class RemoteIngredient(val id: String, val categoryId: String, val name: String, val unit: String, val unitCost: Double?, val stockQuantity: Double?, val reorderLevel: Double?, val isActive: Boolean)
@@ -29,6 +30,37 @@ class CatalogApi(
             zone = item.optString("zone"),
             status = item.optString("status"),
             isActive = item.optBoolean("isActive", true),
+        )
+    }
+
+    fun ping(): Result<Unit> = runCatching {
+        val connection = URL(baseUrl.trimEnd('/') + "/api/SalesOrders/tables").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 4_000
+            connection.readTimeout = 4_000
+            connection.setRequestProperty("Accept", "application/json")
+            connection.setRequestProperty(
+                BackendAuth.AUTHORIZATION_HEADER,
+                BackendAuth.authorizationValue(token),
+            )
+            val code = connection.responseCode
+            if (code == 401) throw SyncUnauthorized("La sesión expiró")
+            if (code !in 200..299) error("HOST no responde")
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    fun fetchTableAccounts(): Result<List<RemoteTableAccount>> = request("/api/SalesOrders/tables") { item ->
+        val openOrderId = if (item.isNull("openOrderId")) {
+            null
+        } else {
+            item.optString("openOrderId").ifBlank { null }
+        }
+        RemoteTableAccount(
+            tableId = item.getString("tableId"),
+            openOrderId = openOrderId,
         )
     }
 

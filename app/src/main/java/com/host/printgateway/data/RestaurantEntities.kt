@@ -13,7 +13,10 @@ data class DiningTableEntity(
     val layoutY: Double?,
     val status: String,
     val isActive: Boolean,
-)
+) {
+    fun isOccupied(): Boolean =
+        status == "1" || status.equals("Busy", ignoreCase = true)
+}
 
 @Entity(tableName = "product_types")
 data class ProductTypeEntity(

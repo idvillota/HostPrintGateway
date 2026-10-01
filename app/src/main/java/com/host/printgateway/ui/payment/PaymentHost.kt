@@ -1,5 +1,6 @@
 package com.host.printgateway.ui.payment
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -7,12 +8,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import android.provider.Settings
+import androidx.compose.ui.platform.LocalContext
+import com.host.printgateway.data.DiningTableEntity
+import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.OrderItemEntity
 import com.host.printgateway.data.PrintGatewayDatabase
+import com.host.printgateway.data.RestaurantRepository
+import com.host.printgateway.network.SyncUnauthorized
 import com.host.printgateway.receipt.InvoiceDraft
 import com.host.printgateway.receipt.InvoiceXml
 import com.host.printgateway.receipt.ReceiptLine
+import com.host.printgateway.ui.SessionRenewalNotifier
 import com.host.printgateway.ui.components.AppScaffold
 import com.host.printgateway.ui.navigation.PaymentStep
 import com.host.printgateway.ui.order.formatPrice
@@ -25,15 +33,22 @@ import kotlin.math.abs
 @Composable
 fun PaymentHost(
     step: PaymentStep,
+    apiUrl: String,
+    deviceToken: String,
     printerMac: String,
     database: PrintGatewayDatabase,
+    settings: GatewaySettings,
     onStep: (PaymentStep) -> Unit,
     onLeave: () -> Unit,
     onOpenSettings: () -> Unit,
     catalogRevision: Int,
+    offlineMode: Boolean,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val dao = remember(database) { database.restaurantDao() }
+    val repository = remember(database, deviceToken) { RestaurantRepository(database, deviceToken) }
+    var tables by remember { mutableStateOf(emptyList<DiningTableEntity>()) }
     var orders by remember { mutableStateOf(emptyList<OrderEntity>()) }
     var itemsByOrder by remember { mutableStateOf(emptyMap<String, List<OrderItemEntity>>()) }
     var notice by remember { mutableStateOf("") }
@@ -49,12 +64,97 @@ fun PaymentHost(
     suspend fun reload() {
         val unpaid = dao.getUnpaidOrders()
         val items = unpaid.associate { order -> order.id to dao.getOrderItems(order.id) }
+        tables = dao.getTables()
         orders = unpaid
         itemsByOrder = items
     }
 
-    LaunchedEffect(catalogRevision) {
+    LaunchedEffect(catalogRevision, offlineMode) {
+        if (!offlineMode && apiUrl.isNotBlank() && deviceToken.isNotBlank()) {
+            val deviceId = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ANDROID_ID,
+            ) ?: "unknown-device"
+            val caughtUp = withContext(Dispatchers.IO) {
+                val catalog = repository.syncCatalog(apiUrl)
+                if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
+                repository.releaseTablesSettledOnHost(apiUrl)
+                repository.catchUpOpenAccounts(apiUrl, deviceId, settings.saleCursor)
+            }
+            caughtUp.onSuccess { cursor ->
+                if (cursor.isNotBlank()) settings.saleCursor = cursor
+            }
+            if (caughtUp.exceptionOrNull() is SyncUnauthorized) {
+                SessionRenewalNotifier.show(context)
+            }
+        }
         reload()
+    }
+
+    fun settle(current: TableBill, printInvoice: Boolean) {
+        if (current.lines.isEmpty()) return
+        val tip = parseAmount(tipText)
+        if (tip == null) {
+            notice = "La propina no es válida."
+            return
+        }
+        val due = current.foodTotal + tip
+        val split = splitNote(splitMode, equalParts, customParts, due)
+        if (split == null) {
+            notice = "Las partes personalizadas deben sumar el total."
+            return
+        }
+        sending = true
+        notice = if (printInvoice) "Imprimiendo factura…" else "Cobrando…"
+        scope.launch {
+            val printed = if (printInvoice) {
+                val draft = InvoiceDraft(
+                    invoiceNumber = "F${System.currentTimeMillis().toString().takeLast(6)}",
+                    tableCode = current.tableCode,
+                    cashier = current.cashier,
+                    lines = current.lines.map {
+                        ReceiptLine(it.description, it.quantity, it.unitPrice, it.lineTotal)
+                    },
+                    articleCount = current.articleCount,
+                    foodTotal = current.foodTotal,
+                    taxAmount = current.taxAmount,
+                    tip = tip,
+                    paymentMethod = paymentMethod,
+                    splitNote = split,
+                )
+                val xml = InvoiceXml.write(draft)
+                withContext(Dispatchers.IO) { InvoiceXml.print(xml, printerMac) }
+            } else {
+                Result.success(Unit)
+            }
+            if (printed.isFailure) {
+                sending = false
+                notice = printed.exceptionOrNull()?.message ?: "No se pudo imprimir la factura"
+                return@launch
+            }
+            val deviceId = Settings.Secure.getString(
+                context.contentResolver,
+                Settings.Secure.ANDROID_ID,
+            ) ?: "unknown-device"
+            val uploaded = withContext(Dispatchers.IO) {
+                repository.markPaidForSync(current.orderIds, paymentMethod, tip)
+                when {
+                    offlineMode -> Result.success(0)
+                    apiUrl.isBlank() || deviceToken.isBlank() ->
+                        Result.failure(IllegalStateException("No hay conexión con HOST."))
+                    else -> repository.syncPendingOrders(apiUrl, deviceId)
+                }
+            }
+            reload()
+            sending = false
+            notice = when {
+                printInvoice && uploaded.isSuccess -> "Factura enviada a la impresora."
+                printInvoice -> "Factura impresa. ${uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."}"
+                uploaded.isSuccess -> "Cobro registrado."
+                else -> uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."
+            }
+            onStep(PaymentStep.Accounts)
+        }
     }
 
     val title = if (step is PaymentStep.Bill) "Cobro" else "Pagos"
@@ -64,6 +164,8 @@ fun PaymentHost(
         onLeave
     }
 
+    BackHandler(onBack = onBack)
+
     AppScaffold(
         title = title,
         onBack = onBack,
@@ -72,7 +174,7 @@ fun PaymentHost(
         when (step) {
             PaymentStep.Accounts -> PaymentAccountsScreen(
                 padding = padding,
-                accounts = summariesOf(orders),
+                accounts = accountsOf(tables, orders),
                 notice = notice,
                 onAccount = { account ->
                     notice = ""
@@ -81,7 +183,7 @@ fun PaymentHost(
             )
 
             is PaymentStep.Bill -> {
-                val bill = billOf(step.tableKey, orders, itemsByOrder)
+                val bill = billOf(step.tableKey, orders, itemsByOrder) ?: emptyBill(step.tableKey, tables)
                 PaymentBillScreen(
                     padding = padding,
                     bill = bill,
@@ -111,58 +213,26 @@ fun PaymentHost(
                             customParts = customParts.dropLast(1)
                         }
                     },
-                    onPrint = {
-                        val current = bill ?: return@PaymentBillScreen
-                        val tip = parseAmount(tipText)
-                        if (tip == null) {
-                            notice = "La propina no es válida."
-                            return@PaymentBillScreen
-                        }
-                        val due = current.foodTotal + tip
-                        val splitNote = splitNote(splitMode, equalParts, customParts, due)
-                        if (splitNote == null) {
-                            notice = "Las partes personalizadas deben sumar el total."
-                            return@PaymentBillScreen
-                        }
-                        sending = true
-                        notice = "Imprimiendo factura…"
-                        scope.launch {
-                            val draft = InvoiceDraft(
-                                invoiceNumber = "F${System.currentTimeMillis().toString().takeLast(6)}",
-                                tableCode = current.tableCode,
-                                cashier = current.cashier,
-                                lines = current.lines.map {
-                                    ReceiptLine(it.description, it.quantity, it.unitPrice, it.lineTotal)
-                                },
-                                articleCount = current.articleCount,
-                                foodTotal = current.foodTotal,
-                                taxAmount = current.taxAmount,
-                                tip = tip,
-                                paymentMethod = paymentMethod,
-                                splitNote = splitNote,
-                            )
-                            val xml = InvoiceXml.write(draft)
-                            val printed = withContext(Dispatchers.IO) {
-                                InvoiceXml.print(xml, printerMac)
-                            }
-                            if (printed.isSuccess) {
-                                withContext(Dispatchers.IO) {
-                                    dao.markOrdersPaid(current.orderIds, System.currentTimeMillis())
-                                }
-                                reload()
-                                sending = false
-                                notice = "Factura enviada a la impresora."
-                                onStep(PaymentStep.Accounts)
-                            } else {
-                                sending = false
-                                notice = printed.exceptionOrNull()?.message ?: "No se pudo imprimir la factura"
-                            }
-                        }
-                    },
+                    onPrint = { settle(bill, printInvoice = true) },
+                    onCharge = { settle(bill, printInvoice = false) },
                 )
             }
         }
     }
+}
+
+private fun emptyBill(tableKey: String, tables: List<DiningTableEntity>): TableBill {
+    val table = tables.firstOrNull { it.id == tableKey }
+    return TableBill(
+        tableKey = tableKey,
+        tableCode = table?.code ?: tableKey,
+        orderIds = emptyList(),
+        cashier = "Caja",
+        lines = emptyList(),
+        foodTotal = 0.0,
+        taxAmount = 0.0,
+        articleCount = 0,
+    )
 }
 
 private fun splitNote(

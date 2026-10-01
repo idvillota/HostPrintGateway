@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-39:12
-INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-39:12
-INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-39:12
-INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-39:12
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-40:12
+INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-40:12
+INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-40:12
+INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:2:1-40:12
 MERGED from [androidx.compose.material3:material3-android:1.2.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\8cfdf5cbc71dff4d1bc740f4b153dc35\transformed\material3-release\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.material:material-icons-core-android:1.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\620196120fd5b1daccd4a8c53feedde9\transformed\material-icons-core-release\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.material:material-ripple-android:1.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\5e584302f16a90a08b6e650fc48eba32\transformed\material-ripple-release\AndroidManifest.xml:2:1-7:12
@@ -94,8 +94,8 @@ ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:13:5-77
 	android:name
 		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:13:22-74
 application
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:5-38:19
-INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:5-38:19
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:5-39:19
+INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:5-39:19
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:23:5-33:19
 MERGED from [androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:28:5-89
@@ -115,45 +115,47 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\GABRIEL\AppData\Lo
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\f25ec75d720ef799859905a22d9c12bc\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:19:9-35
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:20:9-35
 	android:label
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:18:9-43
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:19:9-34
+	android:roundIcon
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:18:9-48
 	android:icon
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:17:9-58
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:17:9-43
 	android:allowBackup
 		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:16:9-36
 	android:theme
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:21:9-72
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:22:9-72
 	android:usesCleartextTraffic
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:20:9-44
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:21:9-44
 service#com.host.printgateway.service.PrintGatewayService
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:23:9-26:63
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:24:9-27:63
 	android:exported
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:25:13-37
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:26:13-37
 	android:foregroundServiceType
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:26:13-60
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:27:13-60
 	android:name
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:24:13-56
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:25:13-56
 activity#com.host.printgateway.ui.MainActivity
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:28:9-37:20
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:29:9-38:20
 	android:launchMode
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:31:13-43
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:32:13-43
 	android:windowSoftInputMode
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:32:13-55
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:33:13-55
 	android:exported
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:30:13-36
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:31:13-36
 	android:name
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:29:13-44
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:30:13-44
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:33:13-36:29
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:34:13-37:29
 action#android.intent.action.MAIN
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:34:17-69
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:35:17-69
 	android:name
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:34:25-66
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:35:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:35:17-77
+ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:36:17-77
 	android:name
-		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:35:27-74
+		ADDED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:36:27-74
 uses-sdk
 INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml

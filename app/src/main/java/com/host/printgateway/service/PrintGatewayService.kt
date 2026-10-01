@@ -73,6 +73,41 @@ class PrintGatewayService : Service() {
             while (isActive) {
                 try {
                     printMutex.withLock {
+                        val offline = GatewaySettings(this@PrintGatewayService).offlineMode
+                        var localPrintFailed = false
+                        for (ticket in restaurantDao.getPendingTickets()) {
+                            updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
+                            val rendered = runCatching { ticketFormatter.format(ticket.payload) }
+                            if (rendered.isFailure) {
+                                restaurantDao.markTicketFailed(
+                                    ticket.id,
+                                    rendered.exceptionOrNull()?.message ?: "XML inválido",
+                                )
+                                updateNotification("Error comanda: ${ticket.id.take(8)}")
+                                continue
+                            }
+                            val printed = printer.print(rendered.getOrThrow())
+                            if (printed.isSuccess) {
+                                restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                                updateNotification("Comanda OK ${ticket.id.take(8)}")
+                            } else {
+                                restaurantDao.markTicketFailed(
+                                    ticket.id,
+                                    printed.exceptionOrNull()?.message ?: "print failed",
+                                )
+                                updateNotification("Error comanda: ${ticket.id.take(8)}")
+                                localPrintFailed = true
+                                break
+                            }
+                        }
+
+                        if (offline) {
+                            if (!localPrintFailed && restaurantDao.getPendingTickets().isEmpty()) {
+                                updateNotification("Sin internet. Comandas locales listas.")
+                            }
+                            return@withLock
+                        }
+
                         val remoteJobs = if (api != null) {
                             api.fetchPendingJobs().getOrElse { error ->
                                 updateNotification("Offline: ${error.message?.take(70) ?: "sin conexión"}")
@@ -138,22 +173,6 @@ class PrintGatewayService : Service() {
                                 break
                             }
                         }
-
-                        for (ticket in restaurantDao.getPendingTickets()) {
-                            updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
-                            val printed = printer.print(ticketFormatter.format(ticket.payload))
-                            if (printed.isSuccess) {
-                                restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
-                                updateNotification("Comanda OK ${ticket.id.take(8)}")
-                            } else {
-                                restaurantDao.markTicketFailed(
-                                    ticket.id,
-                                    printed.exceptionOrNull()?.message ?: "print failed",
-                                )
-                                updateNotification("Error comanda: ${ticket.id.take(8)}")
-                                break
-                            }
-                        }
                     }
                 } catch (e: Exception) {
                     updateNotification("Error: ${e.message?.take(80)}")
@@ -172,7 +191,7 @@ class PrintGatewayService : Service() {
     private fun buildNotification(text: String): Notification {
         ensureChannel()
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Host Print Gateway")
+            .setContentTitle("Host Lite")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_share)
             .setOngoing(true)
@@ -189,7 +208,7 @@ class PrintGatewayService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Print Gateway",
+            "Host Lite",
             NotificationManager.IMPORTANCE_LOW,
         )
         getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.host.printgateway.ui.components.AppScaffold
+import com.host.printgateway.ui.components.HostLogo
 
 @Composable
 fun LoginScreen(
@@ -51,12 +52,9 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = "Host",
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            HostLogo(height = 120.dp)
             Text(
                 text = "Entra para tomar pedidos y cobrar las mesas.",
                 style = MaterialTheme.typography.bodyLarge,

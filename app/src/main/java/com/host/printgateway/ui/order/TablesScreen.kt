@@ -1,5 +1,6 @@
 package com.host.printgateway.ui.order
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.host.printgateway.data.DiningTableEntity
@@ -29,6 +31,7 @@ fun TablesScreen(
     syncing: Boolean,
     notice: String,
     cartCount: Int,
+    occupiedTableIds: Set<String>,
     onSync: () -> Unit,
     onTable: (DiningTableEntity) -> Unit,
     onOpenComanda: () -> Unit,
@@ -81,7 +84,11 @@ fun TablesScreen(
                         contentPadding = PaddingValues(bottom = 12.dp),
                     ) {
                         items(tables, key = { it.id }) { table ->
-                            TableCard(table = table, onClick = { onTable(table) })
+                            TableCard(
+                                table = table,
+                                occupied = table.isOccupied() || table.id in occupiedTableIds,
+                                onClick = { onTable(table) },
+                            )
                         }
                     }
                 }
@@ -103,12 +110,19 @@ fun TablesScreen(
 @Composable
 private fun TableCard(
     table: DiningTableEntity,
+    occupied: Boolean,
     onClick: () -> Unit,
 ) {
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (occupied) OccupiedTable else MaterialTheme.colorScheme.surface,
+        ),
+        border = BorderStroke(
+            width = if (occupied) 2.dp else 1.dp,
+            color = if (occupied) OccupiedLabel else MaterialTheme.colorScheme.outline,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
@@ -135,6 +149,17 @@ private fun TableCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (occupied) {
+                Text(
+                    text = "Ocupada",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = OccupiedLabel,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
         }
     }
 }
+
+private val OccupiedTable = Color(0xFFFFF1E6)
+private val OccupiedLabel = Color(0xFFC45C12)

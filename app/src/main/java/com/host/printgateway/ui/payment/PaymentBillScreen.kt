@@ -48,6 +48,7 @@ fun PaymentBillScreen(
     onAddCustomPart: () -> Unit,
     onRemoveCustomPart: () -> Unit,
     onPrint: () -> Unit,
+    onCharge: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -66,6 +67,13 @@ fun PaymentBillScreen(
             return@Column
         }
         Text(text = "Mesa ${bill.tableCode}", style = MaterialTheme.typography.headlineSmall)
+        if (bill.lines.isEmpty()) {
+            Text(
+                text = "Esta mesa está ocupada, pero su cuenta todavía no llegó al celular. En Mesas toca Sincronizar con internet.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            return@Column
+        }
         bill.lines.forEach { line ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -142,6 +150,14 @@ fun PaymentBillScreen(
             contentPadding = PaddingValues(vertical = 14.dp),
         ) {
             Text(if (sending) "Imprimiendo…" else "Imprimir factura")
+        }
+        OutlinedButton(
+            onClick = onCharge,
+            enabled = !sending && bill.lines.isNotEmpty() && tip != null,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = 14.dp),
+        ) {
+            Text(if (sending) "Cobrando…" else "Cobrar sin factura")
         }
     }
 }

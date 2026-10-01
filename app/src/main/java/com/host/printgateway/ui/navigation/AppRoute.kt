@@ -16,6 +16,10 @@ sealed interface PaymentStep {
 sealed interface OrderingStep {
     data object Tables : OrderingStep
 
+    data class TableMenu(val tableId: String) : OrderingStep
+
+    data class OrderedProducts(val tableId: String) : OrderingStep
+
     data class ProductTypes(val tableId: String) : OrderingStep
 
     data class Products(val tableId: String, val typeId: String) : OrderingStep

@@ -1,5 +1,6 @@
 package com.host.printgateway.ui.payment
 
+import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.OrderItemEntity
 
@@ -32,6 +33,31 @@ enum class SplitMode {
     None,
     Equal,
     Custom,
+}
+
+fun accountsOf(
+    tables: List<DiningTableEntity>,
+    orders: List<OrderEntity>,
+): List<TableAccountSummary> {
+    val summaries = summariesOf(orders).associateBy { it.tableKey }
+    val keys = linkedSetOf<String>()
+    tables.forEach { table ->
+        if (table.isOccupied() || orders.any { it.diningTableId == table.id }) {
+            keys += table.id
+        }
+    }
+    orders.forEach { order ->
+        val key = order.diningTableId ?: order.diningTableCode
+        if (key !in keys) keys += key
+    }
+    return keys.map { key ->
+        summaries[key] ?: TableAccountSummary(
+            tableKey = key,
+            tableCode = tables.firstOrNull { it.id == key }?.code ?: key,
+            orderCount = 0,
+            total = 0.0,
+        )
+    }.sortedBy { it.tableCode }
 }
 
 fun summariesOf(orders: List<OrderEntity>): List<TableAccountSummary> {

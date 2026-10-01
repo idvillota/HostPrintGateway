@@ -118,8 +118,14 @@ abstract class RestaurantDao {
     @Query("SELECT * FROM orders WHERE status != 'PAID' ORDER BY createdAt DESC")
     abstract suspend fun getUnpaidOrders(): List<OrderEntity>
 
-    @Query("UPDATE orders SET status = 'PAID', closedAtUtc = :closedAt WHERE id IN (:ids)")
-    abstract suspend fun markOrdersPaid(ids: List<String>, closedAt: Long)
+    @Query("UPDATE orders SET status = 'PAID', closedAtUtc = :closedAt, syncStatus = :syncStatus WHERE id IN (:ids)")
+    abstract suspend fun markOrdersPaid(ids: List<String>, closedAt: Long, syncStatus: String)
+
+    @Query("SELECT * FROM orders WHERE id = :id LIMIT 1")
+    abstract suspend fun getOrder(id: String): OrderEntity?
+
+    @Query("UPDATE dining_tables SET status = :status WHERE id = :id")
+    abstract suspend fun updateTableStatus(id: String, status: String)
 
     @Query("SELECT * FROM orders WHERE syncStatus != 'SYNCED' ORDER BY createdAt")
     abstract suspend fun getOrdersPendingSync(): List<OrderEntity>
@@ -132,6 +138,18 @@ abstract class RestaurantDao {
 
     @Query("SELECT * FROM orders WHERE remoteId = :remoteId LIMIT 1")
     abstract suspend fun getOrderByRemoteId(remoteId: String): OrderEntity?
+
+    @Query("SELECT * FROM orders WHERE remoteId IS NULL OR remoteId = '' ORDER BY createdAt DESC")
+    abstract suspend fun getOrdersMissingOnHost(): List<OrderEntity>
+
+    @Query("DELETE FROM order_items WHERE orderId = :orderId")
+    abstract suspend fun deleteOrderItems(orderId: String)
+
+    @Query("DELETE FROM kitchen_tickets WHERE orderId = :orderId")
+    abstract suspend fun deleteTicketsForOrder(orderId: String)
+
+    @Query("DELETE FROM orders WHERE id = :orderId AND (remoteId IS NULL OR remoteId = '')")
+    abstract suspend fun deleteOrderMissingOnHost(orderId: String)
 
     @Query("UPDATE orders SET subtotal = :subtotal, total = :total WHERE id = :id")
     abstract suspend fun updateOrderTotals(id: String, subtotal: Double, total: Double)
@@ -159,6 +177,13 @@ abstract class RestaurantDao {
 
     @Query("UPDATE kitchen_tickets SET attempts = attempts + 1, status = 'FAILED', lastError = :error WHERE id = :id")
     abstract suspend fun markTicketFailed(id: String, error: String)
+
+    @Transaction
+    open suspend fun deleteLocalOnlyOrder(orderId: String) {
+        deleteOrderItems(orderId)
+        deleteTicketsForOrder(orderId)
+        deleteOrderMissingOnHost(orderId)
+    }
 
     @Transaction
     open suspend fun saveOrderWithTicket(order: OrderEntity, items: List<OrderItemEntity>, ticket: KitchenTicketEntity) {

@@ -34,8 +34,9 @@
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
         android:debuggable="true"
         android:extractNativeLibs="false"
-        android:icon="@android:drawable/sym_def_app_icon"
-        android:label="Host Print Gateway"
+        android:icon="@drawable/host_logo"
+        android:label="Host Lite"
+        android:roundIcon="@drawable/host_logo"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="true" >
