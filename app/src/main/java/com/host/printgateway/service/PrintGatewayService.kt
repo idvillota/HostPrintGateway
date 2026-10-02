@@ -8,11 +8,14 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.host.printgateway.data.PrintGatewayDatabase
+import com.host.printgateway.data.PrintJobEntity
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.network.PrintJobAckRequest
 import com.host.printgateway.network.PrintJobApi
 import com.host.printgateway.printer.BluetoothEscPosPrinter
 import com.host.printgateway.printer.PrintJobRenderer
+import com.host.printgateway.printer.KitchenTicketFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,7 +28,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Foreground poll loop: Host pending jobs → ESC/POS → Bluetooth → ACK.
+ * Foreground poll loop: API → Room → ESC/POS → Bluetooth → ACK.
  */
 class PrintGatewayService : Service() {
 
@@ -46,7 +49,7 @@ class PrintGatewayService : Service() {
 
     private fun startGateway() {
         val settings = GatewaySettings(this)
-        if (!settings.isConfigured()) {
+        if (!settings.isPrinterConfigured()) {
             updateNotification("Configuración incompleta")
             stopSelf()
             return
@@ -55,33 +58,117 @@ class PrintGatewayService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification("Gateway iniciado…"))
         loopJob?.cancel()
         loopJob = scope.launch {
-            val api = PrintJobApi(settings.apiBaseUrl, settings.deviceToken)
+            val api = if (settings.isConfigured()) {
+                PrintJobApi(settings.apiBaseUrl, settings.deviceToken)
+            } else {
+                null
+            }
             val printer = BluetoothEscPosPrinter(settings.printerMac)
             val renderer = PrintJobRenderer()
+            val ticketFormatter = KitchenTicketFormatter()
+            val database = PrintGatewayDatabase.get(this@PrintGatewayService)
+            val printJobsDao = database.printJobDao()
+            val restaurantDao = database.restaurantDao()
 
             while (isActive) {
                 try {
                     printMutex.withLock {
-                        val jobs = api.fetchPendingJobs().getOrElse { error ->
-                            updateNotification("API: ${error.message?.take(80) ?: "error"}")
+                        val offline = GatewaySettings(this@PrintGatewayService).offlineMode
+                        var localPrintFailed = false
+                        for (ticket in restaurantDao.getPendingTickets()) {
+                            updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
+                            val rendered = runCatching { ticketFormatter.format(ticket.payload) }
+                            if (rendered.isFailure) {
+                                restaurantDao.markTicketFailed(
+                                    ticket.id,
+                                    rendered.exceptionOrNull()?.message ?: "XML inválido",
+                                )
+                                updateNotification("Error comanda: ${ticket.id.take(8)}")
+                                continue
+                            }
+                            val printed = printer.print(rendered.getOrThrow())
+                            if (printed.isSuccess) {
+                                restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                                updateNotification("Comanda OK ${ticket.id.take(8)}")
+                            } else {
+                                restaurantDao.markTicketFailed(
+                                    ticket.id,
+                                    printed.exceptionOrNull()?.message ?: "print failed",
+                                )
+                                updateNotification("Error comanda: ${ticket.id.take(8)}")
+                                localPrintFailed = true
+                                break
+                            }
+                        }
+
+                        if (offline) {
+                            if (!localPrintFailed && restaurantDao.getPendingTickets().isEmpty()) {
+                                updateNotification("Sin internet. Comandas locales listas.")
+                            }
                             return@withLock
                         }
-                        if (jobs.isEmpty()) {
-                            updateNotification("Escuchando… (sin trabajos)")
-                        }
-                        for (job in jobs) {
-                            updateNotification("Imprimiendo ${job.id.take(8)}…")
-                            val bytes = runCatching { renderer.toEscPos(job) }.getOrElse { e ->
-                                api.acknowledge(job.id, PrintJobAckRequest(false, e.message))
-                                return@withLock
+
+                        val remoteJobs = if (api != null) {
+                            api.fetchPendingJobs().getOrElse { error ->
+                                updateNotification("Offline: ${error.message?.take(70) ?: "sin conexión"}")
+                                emptyList()
                             }
+                        } else {
+                            emptyList()
+                        }
+                        if (remoteJobs.isNotEmpty()) {
+                            printJobsDao.insertAll(remoteJobs.map { job ->
+                                PrintJobEntity(
+                                    id = job.id,
+                                    kind = job.kind,
+                                    payloadFormat = job.payloadFormat,
+                                    payload = job.payload,
+                                )
+                            })
+                            updateNotification("Trabajos guardados: ${remoteJobs.size}")
+                        }
+
+                        for (job in printJobsDao.getPrintedAwaitingAck()) {
+                            if (api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess) {
+                                printJobsDao.deleteById(job.id)
+                            }
+                        }
+
+                        val pendingJobs = printJobsDao.getPending()
+                        if (pendingJobs.isEmpty()) {
+                            updateNotification("Escuchando… (cola vacía)")
+                        }
+                        for (job in pendingJobs) {
+                            updateNotification("Imprimiendo ${job.id.take(8)}…")
+                            val rendered = runCatching {
+                                renderer.toEscPos(
+                                    com.host.printgateway.network.PrintJobDto(
+                                        id = job.id,
+                                        kind = job.kind,
+                                        payloadFormat = job.payloadFormat,
+                                        payload = job.payload,
+                                    ),
+                                )
+                            }
+                            if (rendered.isFailure) {
+                                val error = rendered.exceptionOrNull()
+                                api?.acknowledge(job.id, PrintJobAckRequest(false, error?.message))
+                                updateNotification("Formato inválido: ${job.id.take(8)}")
+                                continue
+                            }
+                            val bytes = rendered.getOrThrow()
                             val printed = printer.print(bytes)
                             if (printed.isSuccess) {
-                                api.acknowledge(job.id, PrintJobAckRequest(true))
-                                updateNotification("OK ${job.id.take(8)}")
+                                printJobsDao.markPrinted(job.id)
+                                if (api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess) {
+                                    printJobsDao.deleteById(job.id)
+                                    updateNotification("OK ${job.id.take(8)}")
+                                } else {
+                                    updateNotification("Impreso offline: ${job.id.take(8)}")
+                                }
                             } else {
                                 val msg = printed.exceptionOrNull()?.message ?: "print failed"
-                                api.acknowledge(job.id, PrintJobAckRequest(false, msg))
+                                api?.acknowledge(job.id, PrintJobAckRequest(false, msg))
                                 updateNotification("Error impresora: ${msg.take(60)}")
                                 break
                             }
@@ -104,7 +191,7 @@ class PrintGatewayService : Service() {
     private fun buildNotification(text: String): Notification {
         ensureChannel()
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Host Print Gateway")
+            .setContentTitle("Host Lite")
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_share)
             .setOngoing(true)
@@ -121,7 +208,7 @@ class PrintGatewayService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Print Gateway",
+            "Host Lite",
             NotificationManager.IMPORTANCE_LOW,
         )
         getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)

@@ -16,6 +16,7 @@ class PrintJobRenderer(
         return when (job.payloadFormat.lowercase()) {
             FORMAT_ESCPOS_V1 -> Base64.decode(job.payload, Base64.DEFAULT)
             FORMAT_SALES_RECEIPT_XML -> formatter.format(SalesReceiptXmlParser.parse(job.payload))
+            FORMAT_KITCHEN_TICKET_XML -> KitchenTicketFormatter().format(job.payload)
             else -> error("Formato no soportado: ${job.payloadFormat}")
         }
     }
@@ -23,5 +24,6 @@ class PrintJobRenderer(
     companion object {
         const val FORMAT_ESCPOS_V1 = "escpos-v1"
         const val FORMAT_SALES_RECEIPT_XML = "sales-receipt-xml"
+        const val FORMAT_KITCHEN_TICKET_XML = "kitchen-ticket-xml"
     }
 }
