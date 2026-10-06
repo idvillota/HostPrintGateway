@@ -4,8 +4,7 @@ import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderDraftLine
 import com.host.printgateway.data.RestaurantDao
 import com.host.printgateway.data.RestaurantRepository
-import com.host.printgateway.printer.BluetoothEscPosPrinter
-import com.host.printgateway.printer.KitchenTicketFormatter
+import com.host.printgateway.printer.PrintPipeline
 
 sealed interface SubmitOutcome {
     data class Printed(val orderId: String) : SubmitOutcome
@@ -40,9 +39,7 @@ class SubmitComanda(
                     "Indica la MAC de la impresora en Configuración.",
                 )
             }
-            val printed = BluetoothEscPosPrinter(printerMac.trim()).print(
-                KitchenTicketFormatter().format(ticket.payload),
-            )
+            val printed = PrintPipeline.printKitchenTicketXml(ticket.payload, printerMac)
             if (printed.isFailure) {
                 val reason = printed.exceptionOrNull()?.message ?: "No se pudo imprimir"
                 dao.markTicketFailed(ticket.id, reason)

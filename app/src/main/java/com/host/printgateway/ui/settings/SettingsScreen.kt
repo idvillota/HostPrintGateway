@@ -30,8 +30,7 @@ import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.PrintJobEntity
 import com.host.printgateway.ui.order.formatPrice
-import com.host.printgateway.printer.BluetoothEscPosPrinter
-import com.host.printgateway.printer.EscPosReceiptFormatter
+import com.host.printgateway.printer.PrintPipeline
 import com.host.printgateway.ui.RoomDebugPanel
 import com.host.printgateway.ui.components.AppScaffold
 import kotlinx.coroutines.Dispatchers
@@ -153,8 +152,7 @@ fun SettingsScreen(
                     onStatus("Enviando prueba…")
                     scope.launch {
                         val result = withContext(Dispatchers.IO) {
-                            val bytes = EscPosReceiptFormatter().formatTestTicket(printerMac.trim())
-                            BluetoothEscPosPrinter(printerMac.trim()).print(bytes)
+                            PrintPipeline.printTestTicket(printerMac)
                         }
                         testingPrinter = false
                         onStatus(

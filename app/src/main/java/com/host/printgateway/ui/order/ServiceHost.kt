@@ -1,6 +1,5 @@
 package com.host.printgateway.ui.order
 
-import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderDraftLine
@@ -143,10 +143,7 @@ fun ServiceHost(
                     scope.launch {
                         syncing = true
                         session.notice = ""
-                        val deviceId = Settings.Secure.getString(
-                            context.contentResolver,
-                            Settings.Secure.ANDROID_ID,
-                        ) ?: "unknown-device"
+                        val deviceId = DeviceIdProvider.get(context)
                         val outcome = withContext(Dispatchers.IO) {
                             val catalog = repository.syncCatalog(apiUrl)
                             if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
@@ -298,10 +295,7 @@ fun ServiceHost(
                         session.sending = true
                         session.notice = "Enviando comanda…"
                         scope.launch {
-                            val deviceId = Settings.Secure.getString(
-                                context.contentResolver,
-                                Settings.Secure.ANDROID_ID,
-                            ) ?: "unknown-device"
+                            val deviceId = DeviceIdProvider.get(context)
                             val lines = session.cart.map { line ->
                                 OrderDraftLine(
                                     productId = line.product.id,

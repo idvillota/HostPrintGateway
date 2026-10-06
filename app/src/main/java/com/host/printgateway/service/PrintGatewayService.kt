@@ -13,9 +13,8 @@ import com.host.printgateway.data.PrintJobEntity
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.network.PrintJobAckRequest
 import com.host.printgateway.network.PrintJobApi
-import com.host.printgateway.printer.BluetoothEscPosPrinter
-import com.host.printgateway.printer.PrintJobRenderer
-import com.host.printgateway.printer.KitchenTicketFormatter
+import com.host.printgateway.network.PrintJobDto
+import com.host.printgateway.printer.PrintPipeline
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,6 +28,7 @@ import kotlinx.coroutines.sync.withLock
 
 /**
  * Foreground poll loop: API → Room → ESC/POS → Bluetooth → ACK.
+ * Local pending kitchen tickets are drained before cloud jobs (unchanged).
  */
 class PrintGatewayService : Service() {
 
@@ -63,9 +63,7 @@ class PrintGatewayService : Service() {
             } else {
                 null
             }
-            val printer = BluetoothEscPosPrinter(settings.printerMac)
-            val renderer = PrintJobRenderer()
-            val ticketFormatter = KitchenTicketFormatter()
+            val printerMac = settings.printerMac
             val database = PrintGatewayDatabase.get(this@PrintGatewayService)
             val printJobsDao = database.printJobDao()
             val restaurantDao = database.restaurantDao()
@@ -77,7 +75,7 @@ class PrintGatewayService : Service() {
                         var localPrintFailed = false
                         for (ticket in restaurantDao.getPendingTickets()) {
                             updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
-                            val rendered = runCatching { ticketFormatter.format(ticket.payload) }
+                            val rendered = PrintPipeline.renderKitchenTicketXml(ticket.payload)
                             if (rendered.isFailure) {
                                 restaurantDao.markTicketFailed(
                                     ticket.id,
@@ -86,7 +84,7 @@ class PrintGatewayService : Service() {
                                 updateNotification("Error comanda: ${ticket.id.take(8)}")
                                 continue
                             }
-                            val printed = printer.print(rendered.getOrThrow())
+                            val printed = PrintPipeline.printEscPosBytes(rendered.getOrThrow(), printerMac)
                             if (printed.isSuccess) {
                                 restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
                                 updateNotification("Comanda OK ${ticket.id.take(8)}")
@@ -140,24 +138,20 @@ class PrintGatewayService : Service() {
                         }
                         for (job in pendingJobs) {
                             updateNotification("Imprimiendo ${job.id.take(8)}…")
-                            val rendered = runCatching {
-                                renderer.toEscPos(
-                                    com.host.printgateway.network.PrintJobDto(
-                                        id = job.id,
-                                        kind = job.kind,
-                                        payloadFormat = job.payloadFormat,
-                                        payload = job.payload,
-                                    ),
-                                )
-                            }
+                            val dto = PrintJobDto(
+                                id = job.id,
+                                kind = job.kind,
+                                payloadFormat = job.payloadFormat,
+                                payload = job.payload,
+                            )
+                            val rendered = PrintPipeline.renderCloudJob(dto)
                             if (rendered.isFailure) {
                                 val error = rendered.exceptionOrNull()
                                 api?.acknowledge(job.id, PrintJobAckRequest(false, error?.message))
                                 updateNotification("Formato inválido: ${job.id.take(8)}")
                                 continue
                             }
-                            val bytes = rendered.getOrThrow()
-                            val printed = printer.print(bytes)
+                            val printed = PrintPipeline.printEscPosBytes(rendered.getOrThrow(), printerMac)
                             if (printed.isSuccess) {
                                 printJobsDao.markPrinted(job.id)
                                 if (api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess) {

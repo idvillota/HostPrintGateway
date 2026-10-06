@@ -1,13 +1,11 @@
 package com.host.printgateway.network
 
 import android.util.Base64
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONObject
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -22,9 +20,7 @@ class SaleChannel(
     private val token: String,
     private val deviceId: String,
 ) {
-    private val client = OkHttpClient.Builder()
-        .pingInterval(30, TimeUnit.SECONDS)
-        .build()
+    private val client = HostHttp.webSocketClient
 
     @Volatile
     private var socket: WebSocket? = null
@@ -82,9 +78,10 @@ class SaleChannel(
     }
 
     fun close() {
+        // Close only this socket. Never shut down HostHttp.webSocketClient —
+        // HostApp reconnects SaleChannel for the whole session.
         socket?.close(1000, "bye")
         socket = null
-        client.dispatcher.executorService.shutdown()
     }
 
     companion object {

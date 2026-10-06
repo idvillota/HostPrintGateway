@@ -1,6 +1,5 @@
 package com.host.printgateway.ui
 
-import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,16 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.GatewaySettings
+import com.host.printgateway.data.HostSyncOperations
 import com.host.printgateway.data.PrintGatewayDatabase
-import com.host.printgateway.data.RestaurantRepository
 import com.host.printgateway.network.AuthManager
-import com.host.printgateway.network.CatalogApi
 import com.host.printgateway.network.JwtExpiry
-import com.host.printgateway.network.MobileSyncApi
-import com.host.printgateway.network.SaleChannel
-import com.host.printgateway.network.SaleListenEnd
-import com.host.printgateway.network.SyncUnauthorized
 import com.host.printgateway.ui.home.HomeScreen
 import com.host.printgateway.ui.login.LoginScreen
 import com.host.printgateway.ui.navigation.AppRoute
@@ -48,7 +43,6 @@ import com.host.printgateway.ui.payment.PaymentHost
 import com.host.printgateway.ui.settings.SettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -117,16 +111,7 @@ fun HostApp(
         route = AppRoute.Settings
     }
 
-    fun deviceId(): String = Settings.Secure.getString(
-        context.contentResolver,
-        Settings.Secure.ANDROID_ID,
-    ) ?: "unknown-device"
-
-    fun notifyIfUnauthorized(error: Throwable?) {
-        if (error is SyncUnauthorized) {
-            SessionRenewalNotifier.show(context)
-        }
-    }
+    fun deviceId(): String = DeviceIdProvider.get(context)
 
     fun activateOfflineMode() {
         offlineMode = true
@@ -141,18 +126,18 @@ fun HostApp(
         offlineDetail = ""
         scope.launch {
             val outcome = withContext(Dispatchers.IO) {
-                pushThenPull(database, token, savedApiUrl, deviceId(), settings)
+                HostSyncOperations.pushThenPull(database, token, savedApiUrl, deviceId(), settings)
             }
             offlineSyncing = false
             when (outcome) {
-                OfflineSyncResult.Done -> {
+                HostSyncOperations.OfflineSyncResult.Done -> {
                     offlineMode = false
                     settings.offlineMode = false
                     offlineNotice = OfflineNotice.None
                     catalogRevision++
                 }
-                OfflineSyncResult.Unauthorized -> SessionRenewalNotifier.show(context)
-                is OfflineSyncResult.Failed -> offlineDetail = outcome.message
+                HostSyncOperations.OfflineSyncResult.Unauthorized -> SessionRenewalNotifier.show(context)
+                is HostSyncOperations.OfflineSyncResult.Failed -> offlineDetail = outcome.message
             }
         }
     }
@@ -203,153 +188,23 @@ fun HostApp(
         SessionRenewalNotifier.show(context)
     }
 
-    LaunchedEffect(token, savedApiUrl, offlineMode) {
-        if (token.isBlank() || savedApiUrl.isBlank()) {
-            offlineNotice = OfflineNotice.None
-            return@LaunchedEffect
-        }
-        var lastReachableAt = System.currentTimeMillis()
-        while (isActive) {
-            val ping = withContext(Dispatchers.IO) {
-                CatalogApi(savedApiUrl, token).ping()
-            }
-            val now = System.currentTimeMillis()
-            when {
-                ping.exceptionOrNull() is SyncUnauthorized -> {
-                    notifyIfUnauthorized(ping.exceptionOrNull())
-                    lastReachableAt = now
-                }
-                ping.isSuccess -> {
-                    lastReachableAt = now
-                    offlineNotice = if (offlineMode) OfflineNotice.Resume else OfflineNotice.None
-                }
-                !offlineMode && now - lastReachableAt >= OFFLINE_AFTER_MS -> {
-                    offlineNotice = OfflineNotice.Offer
-                }
-                offlineMode && offlineNotice == OfflineNotice.Resume -> {
-                    offlineNotice = OfflineNotice.None
-                }
-            }
-            delay(REACH_POLL_MS)
-        }
-    }
-
-    LaunchedEffect(autoSyncEnabled, token, savedApiUrl, offlineMode) {
-        if (offlineMode || !autoSyncEnabled || token.isBlank() || savedApiUrl.isBlank()) return@LaunchedEffect
-        val repository = RestaurantRepository(database, token)
-        while (isActive) {
-            val result = withContext(Dispatchers.IO) {
-                val catalog = repository.syncCatalog(savedApiUrl)
-                if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
-                catalog
-            }
-            if (result.isSuccess) {
-                catalogRevision++
-            } else {
-                notifyIfUnauthorized(result.exceptionOrNull())
-            }
-            delay(settings.autoSyncIntervalMs)
-        }
-    }
-
-    LaunchedEffect(token, savedApiUrl, offlineMode) {
-        if (offlineMode || token.isBlank() || savedApiUrl.isBlank()) return@LaunchedEffect
-        val repository = RestaurantRepository(database, token)
-        while (isActive) {
-            delay(15_000)
-            val released = withContext(Dispatchers.IO) {
-                repository.releaseTablesSettledOnHost(savedApiUrl)
-            }
-            if (released.exceptionOrNull() is SyncUnauthorized) {
-                notifyIfUnauthorized(released.exceptionOrNull())
-            } else if (released.getOrNull() == true) {
-                catalogRevision++
-            }
-        }
-    }
-
-    LaunchedEffect(uploadNonce, token, savedApiUrl) {
-        if (uploadNonce == 0 || offlineModeNow.value || token.isBlank() || savedApiUrl.isBlank()) return@LaunchedEffect
-        val result = withContext(Dispatchers.IO) {
-            RestaurantRepository(database, token).syncPendingOrders(savedApiUrl, deviceId())
-        }
-        notifyIfUnauthorized(result.exceptionOrNull())
-        session.notice = when {
-            result.isSuccess && result.getOrThrow() > 0 -> "Comanda enviada a HOST"
-            result.isFailure -> result.exceptionOrNull()?.message ?: "No se pudo enviar la comanda a HOST"
-            else -> session.notice
-        }
-    }
-
-    LaunchedEffect(token, savedApiUrl, offlineMode) {
-        if (offlineMode || token.isBlank() || savedApiUrl.isBlank()) return@LaunchedEffect
-        val repository = RestaurantRepository(database, token)
-        val currentDeviceId = deviceId()
-        while (isActive) {
-            val channel = SaleChannel(savedApiUrl, token, currentDeviceId)
-            val end = try {
-                channel.listen(
-                    onSale = { sale ->
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                repository.applyRemoteSale(sale)
-                                if (sale.cursor.isNotBlank()) {
-                                    settings.saleCursor = sale.cursor
-                                }
-                            }
-                            catalogRevision++
-                        }
-                    },
-                    onTablesAvailable = { tableIds ->
-                        scope.launch {
-                            val changed = withContext(Dispatchers.IO) {
-                                repository.releaseNotifiedTables(tableIds)
-                            }
-                            if (changed) catalogRevision++
-                        }
-                    },
-                    onConnected = {
-                        scope.launch {
-                            val unauthorized = withContext(Dispatchers.IO) {
-                                val api = MobileSyncApi(savedApiUrl, token)
-                                val registered = api.registerDevice(currentDeviceId)
-                                if (registered.exceptionOrNull() is SyncUnauthorized) return@withContext true
-                                val catalog = repository.syncCatalog(savedApiUrl)
-                                if (catalog.exceptionOrNull() is SyncUnauthorized) return@withContext true
-                                if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
-                                val released = repository.releaseTablesSettledOnHost(savedApiUrl)
-                                if (released.exceptionOrNull() is SyncUnauthorized) return@withContext true
-                                val uploaded = repository.syncPendingOrders(savedApiUrl, currentDeviceId)
-                                if (uploaded.exceptionOrNull() is SyncUnauthorized) return@withContext true
-                                val pulled = repository.catchUpOpenAccounts(
-                                    savedApiUrl,
-                                    currentDeviceId,
-                                    settings.saleCursor,
-                                )
-                                if (pulled.exceptionOrNull() is SyncUnauthorized) return@withContext true
-                                pulled.onSuccess { cursor ->
-                                    if (cursor.isNotBlank()) settings.saleCursor = cursor
-                                }
-                                false
-                            }
-                            if (unauthorized) {
-                                SessionRenewalNotifier.show(context)
-                            } else {
-                                catalogRevision++
-                            }
-                        }
-                    },
-                )
-            } finally {
-                channel.close()
-            }
-            if (end == SaleListenEnd.Unauthorized) {
-                SessionRenewalNotifier.show(context)
-                break
-            }
-            delay(5_000)
-        }
-    }
+    HostSyncEffects(
+        database = database,
+        settings = settings,
+        token = token,
+        savedApiUrl = savedApiUrl,
+        offlineMode = offlineMode,
+        autoSyncEnabled = autoSyncEnabled,
+        uploadNonce = uploadNonce,
+        offlineModeNow = offlineModeNow,
+        session = session,
+        deviceId = deviceId(),
+        scope = scope,
+        offlineNotice = offlineNotice,
+        onOfflineNoticeChange = { offlineNotice = it },
+        onCatalogRevisionBump = { catalogRevision++ },
+        onUnauthorized = { SessionRenewalNotifier.show(context) },
+    )
 
     LaunchedEffect(route) {
         if (route !is AppRoute.Home) confirmExit = false
@@ -368,134 +223,134 @@ fun HostApp(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-    when (val current = route) {
-        AppRoute.Login -> LoginScreen(
-            email = email,
-            password = password,
-            tenantSlug = tenantSlug,
-            message = loginMessage,
-            busy = loggingIn,
-            onEmailChange = { email = it },
-            onPasswordChange = { password = it },
-            onTenantChange = { tenantSlug = it },
-            onLogin = {
-                persistConnection()
-                loggingIn = true
-                loginMessage = ""
-                scope.launch {
-                    val result = withContext(Dispatchers.IO) {
-                        authManager.login(
-                            baseUrl = apiUrl,
-                            email = email,
-                            password = password,
-                            tenantSlug = tenantSlug,
+        when (val current = route) {
+            AppRoute.Login -> LoginScreen(
+                email = email,
+                password = password,
+                tenantSlug = tenantSlug,
+                message = loginMessage,
+                busy = loggingIn,
+                onEmailChange = { email = it },
+                onPasswordChange = { password = it },
+                onTenantChange = { tenantSlug = it },
+                onLogin = {
+                    persistConnection()
+                    loggingIn = true
+                    loginMessage = ""
+                    scope.launch {
+                        val result = withContext(Dispatchers.IO) {
+                            authManager.login(
+                                baseUrl = apiUrl,
+                                email = email,
+                                password = password,
+                                tenantSlug = tenantSlug,
+                            )
+                        }
+                        loggingIn = false
+                        result.fold(
+                            onSuccess = { response ->
+                                token = response.accessToken
+                                route = AppRoute.Home
+                            },
+                            onFailure = { error ->
+                                token = ""
+                                loginMessage = error.message ?: "No se pudo iniciar sesión"
+                            },
                         )
                     }
-                    loggingIn = false
-                    result.fold(
-                        onSuccess = { response ->
-                            token = response.accessToken
-                            route = AppRoute.Home
-                        },
-                        onFailure = { error ->
-                            token = ""
-                            loginMessage = error.message ?: "No se pudo iniciar sesión"
-                        },
-                    )
-                }
-            },
-            onOpenSettings = ::openSettings,
-        )
+                },
+                onOpenSettings = ::openSettings,
+            )
 
-        AppRoute.Settings -> SettingsScreen(
-            apiUrl = apiUrl,
-            printerMac = printerMac,
-            signedIn = token.isNotBlank(),
-            status = settingsStatus,
-            database = database,
-            onApiUrlChange = { apiUrl = it },
-            onPrinterMacChange = { printerMac = it },
-            onBack = {
-                persistConnection()
-                route = settingsReturn
-            },
-            onStartGateway = {
-                persistConnection()
-                when {
-                    token.isBlank() -> settingsStatus = "Primero inicia sesión."
-                    printerMac.isBlank() -> settingsStatus = "Indica la MAC de la impresora."
-                    else -> {
-                        onEnsurePermissions()
-                        onStartGateway()
-                        settingsStatus = "Gateway iniciado"
+            AppRoute.Settings -> SettingsScreen(
+                apiUrl = apiUrl,
+                printerMac = printerMac,
+                signedIn = token.isNotBlank(),
+                status = settingsStatus,
+                database = database,
+                onApiUrlChange = { apiUrl = it },
+                onPrinterMacChange = { printerMac = it },
+                onBack = {
+                    persistConnection()
+                    route = settingsReturn
+                },
+                onStartGateway = {
+                    persistConnection()
+                    when {
+                        token.isBlank() -> settingsStatus = "Primero inicia sesión."
+                        printerMac.isBlank() -> settingsStatus = "Indica la MAC de la impresora."
+                        else -> {
+                            onEnsurePermissions()
+                            onStartGateway()
+                            settingsStatus = "Gateway iniciado"
+                        }
                     }
-                }
-            },
-            onStopGateway = {
-                onStopGateway()
-                settingsStatus = "Gateway detenido"
-            },
-            onLogout = {
-                authManager.logout()
-                token = ""
-                email = ""
-                password = ""
-                tenantSlug = ""
-                session.reset()
-                settingsStatus = ""
-                loginMessage = ""
-                route = AppRoute.Login
-            },
-            onStatus = { settingsStatus = it },
-            autoSyncEnabled = autoSyncEnabled,
-            autoSyncIntervalMinutes = (settings.autoSyncIntervalMs / 60_000L).toInt(),
-            onToggleAutoSync = {
-                autoSyncEnabled = !autoSyncEnabled
-                settings.autoSyncEnabled = autoSyncEnabled
-            },
-            offlineMode = offlineMode,
-            offlineBusy = offlineSyncing,
-            onToggleOffline = {
-                if (offlineMode) leaveOfflineMode() else activateOfflineMode()
-            },
-        )
+                },
+                onStopGateway = {
+                    onStopGateway()
+                    settingsStatus = "Gateway detenido"
+                },
+                onLogout = {
+                    authManager.logout()
+                    token = ""
+                    email = ""
+                    password = ""
+                    tenantSlug = ""
+                    session.reset()
+                    settingsStatus = ""
+                    loginMessage = ""
+                    route = AppRoute.Login
+                },
+                onStatus = { settingsStatus = it },
+                autoSyncEnabled = autoSyncEnabled,
+                autoSyncIntervalMinutes = (settings.autoSyncIntervalMs / 60_000L).toInt(),
+                onToggleAutoSync = {
+                    autoSyncEnabled = !autoSyncEnabled
+                    settings.autoSyncEnabled = autoSyncEnabled
+                },
+                offlineMode = offlineMode,
+                offlineBusy = offlineSyncing,
+                onToggleOffline = {
+                    if (offlineMode) leaveOfflineMode() else activateOfflineMode()
+                },
+            )
 
-        AppRoute.Home -> HomeScreen(
-            onOpenTables = { route = AppRoute.Ordering(OrderingStep.Tables) },
-            onOpenPayments = { route = AppRoute.Paying(PaymentStep.Accounts) },
-            onOpenSettings = ::openSettings,
-        )
+            AppRoute.Home -> HomeScreen(
+                onOpenTables = { route = AppRoute.Ordering(OrderingStep.Tables) },
+                onOpenPayments = { route = AppRoute.Paying(PaymentStep.Accounts) },
+                onOpenSettings = ::openSettings,
+            )
 
-        is AppRoute.Paying -> PaymentHost(
-            step = current.step,
-            apiUrl = apiUrl,
-            deviceToken = token,
-            printerMac = printerMac,
-            database = database,
-            settings = settings,
-            onStep = { route = AppRoute.Paying(it) },
-            onLeave = { route = AppRoute.Home },
-            onOpenSettings = ::openSettings,
-            catalogRevision = catalogRevision,
-            offlineMode = offlineMode,
-        )
+            is AppRoute.Paying -> PaymentHost(
+                step = current.step,
+                apiUrl = apiUrl,
+                deviceToken = token,
+                printerMac = printerMac,
+                database = database,
+                settings = settings,
+                onStep = { route = AppRoute.Paying(it) },
+                onLeave = { route = AppRoute.Home },
+                onOpenSettings = ::openSettings,
+                catalogRevision = catalogRevision,
+                offlineMode = offlineMode,
+            )
 
-        is AppRoute.Ordering -> ServiceHost(
-            step = current.step,
-            apiUrl = apiUrl,
-            deviceToken = token,
-            printerMac = printerMac,
-            database = database,
-            settings = settings,
-            session = session,
-            onStep = { route = AppRoute.Ordering(it) },
-            onOpenSettings = ::openSettings,
-            onLeave = { route = AppRoute.Home },
-            catalogRevision = catalogRevision,
-            onLocalOrderSaved = { uploadNonce++ },
-            offlineMode = offlineMode,
-        )
-    }
+            is AppRoute.Ordering -> ServiceHost(
+                step = current.step,
+                apiUrl = apiUrl,
+                deviceToken = token,
+                printerMac = printerMac,
+                database = database,
+                settings = settings,
+                session = session,
+                onStep = { route = AppRoute.Ordering(it) },
+                onOpenSettings = ::openSettings,
+                onLeave = { route = AppRoute.Home },
+                catalogRevision = catalogRevision,
+                onLocalOrderSaved = { uploadNonce++ },
+                offlineMode = offlineMode,
+            )
+        }
         if (confirmExit && route is AppRoute.Home) {
             Surface(
                 modifier = Modifier
@@ -526,60 +381,6 @@ fun HostApp(
             )
         }
     }
-}
-
-private const val OFFLINE_AFTER_MS = 20_000L
-private const val REACH_POLL_MS = 5_000L
-
-private enum class OfflineNotice { None, Offer, Resume }
-
-private sealed interface OfflineSyncResult {
-    data object Done : OfflineSyncResult
-    data object Unauthorized : OfflineSyncResult
-    data class Failed(val message: String) : OfflineSyncResult
-}
-
-private suspend fun pushThenPull(
-    database: PrintGatewayDatabase,
-    token: String,
-    baseUrl: String,
-    deviceId: String,
-    settings: GatewaySettings,
-): OfflineSyncResult {
-    val repository = RestaurantRepository(database, token)
-    val uploaded = repository.syncPendingOrders(baseUrl, deviceId)
-    if (uploaded.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
-    if (uploaded.isFailure) {
-        return OfflineSyncResult.Failed(
-            uploaded.exceptionOrNull()?.message ?: "No se pudo enviar lo guardado.",
-        )
-    }
-    val catalog = repository.syncCatalog(baseUrl)
-    if (catalog.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
-    if (catalog.isFailure) {
-        return OfflineSyncResult.Failed(
-            catalog.exceptionOrNull()?.message ?: "No se pudo traer el catálogo.",
-        )
-    }
-    repository.closeOrdersOnFreeHostTables()
-    val released = repository.releaseTablesSettledOnHost(baseUrl)
-    if (released.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
-    if (released.isFailure) {
-        return OfflineSyncResult.Failed(
-            released.exceptionOrNull()?.message ?: "No se pudieron actualizar las mesas.",
-        )
-    }
-    val pulled = repository.catchUpOpenAccounts(baseUrl, deviceId, settings.saleCursor)
-    if (pulled.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
-    if (pulled.isFailure) {
-        return OfflineSyncResult.Failed(
-            pulled.exceptionOrNull()?.message ?: "No se pudieron traer las cuentas.",
-        )
-    }
-    pulled.onSuccess { cursor ->
-        if (cursor.isNotBlank()) settings.saleCursor = cursor
-    }
-    return OfflineSyncResult.Done
 }
 
 @Composable

@@ -2,11 +2,6 @@ package com.host.printgateway.network
 
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
-import java.nio.charset.StandardCharsets
 
 data class RemoteTable(val id: String, val code: String, val capacity: Int, val zone: String, val status: String, val isActive: Boolean)
 data class RemoteTableAccount(val tableId: String, val openOrderId: String?)
@@ -21,6 +16,8 @@ class CatalogApi(
     private val baseUrl: String,
     private val token: String = BackendAuth.DEFAULT_TOKEN,
 ) {
+    private val client = ApiClient(baseUrl = baseUrl, token = token)
+    private val pingHttp = ApiClient(baseUrl = baseUrl, token = token, http = HostHttp.pingClient)
 
     fun fetchTables(): Result<List<RemoteTable>> = request("/api/DiningTables") { item ->
         RemoteTable(
@@ -34,22 +31,9 @@ class CatalogApi(
     }
 
     fun ping(): Result<Unit> = runCatching {
-        val connection = URL(baseUrl.trimEnd('/') + "/api/SalesOrders/tables").openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 4_000
-            connection.readTimeout = 4_000
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty(
-                BackendAuth.AUTHORIZATION_HEADER,
-                BackendAuth.authorizationValue(token),
-            )
-            val code = connection.responseCode
-            if (code == 401) throw SyncUnauthorized("La sesión expiró")
-            if (code !in 200..299) error("HOST no responde")
-        } finally {
-            connection.disconnect()
-        }
+        val response = pingHttp.call("GET", "/api/SalesOrders/tables")
+        if (response.code == 401) throw SyncUnauthorized("La sesión expiró")
+        if (response.code !in 200..299) error("HOST no responde")
     }
 
     fun fetchTableAccounts(): Result<List<RemoteTableAccount>> = request("/api/SalesOrders/tables") { item ->
@@ -143,39 +127,25 @@ class CatalogApi(
     }
 
     private fun <T> request(path: String, mapper: (JSONObject) -> T): Result<List<T>> = runCatching {
-        val connection = URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 15_000
-            connection.readTimeout = 30_000
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty(
-            BackendAuth.AUTHORIZATION_HEADER,
-            BackendAuth.authorizationValue(token)
-            )
-            val body = BufferedReader(InputStreamReader(
-                if (connection.responseCode in 200..299) connection.inputStream else connection.errorStream,
-                StandardCharsets.UTF_8,
-            )).use { it.readText() }
-            if (connection.responseCode == 401) throw SyncUnauthorized("La sesión expiró")
-            if (connection.responseCode !in 200..299) error("GET $path HTTP ${connection.responseCode}: ${body.take(200)}")
-            val root = body.trim()
-            val array = when {
-                root.startsWith("[") -> JSONArray(root)
-                root.startsWith("{") -> {
-                    val objectRoot = JSONObject(root)
-                    when {
-                        objectRoot.has("items") -> objectRoot.getJSONArray("items")
-                        objectRoot.has("data") -> objectRoot.getJSONArray("data")
-                        else -> JSONArray().put(objectRoot)
-                    }
-                }
-                else -> error("Respuesta JSON inválida para $path")
-            }
-            buildList { for (index in 0 until array.length()) add(mapper(array.getJSONObject(index))) }
-        } finally {
-            connection.disconnect()
+        val response = client.call("GET", path)
+        if (response.code == 401) throw SyncUnauthorized("La sesión expiró")
+        if (response.code !in 200..299) {
+            error("GET $path HTTP ${response.code}: ${response.body.take(200)}")
         }
+        val root = response.body.trim()
+        val array = when {
+            root.startsWith("[") -> JSONArray(root)
+            root.startsWith("{") -> {
+                val objectRoot = JSONObject(root)
+                when {
+                    objectRoot.has("items") -> objectRoot.getJSONArray("items")
+                    objectRoot.has("data") -> objectRoot.getJSONArray("data")
+                    else -> JSONArray().put(objectRoot)
+                }
+            }
+            else -> error("Respuesta JSON inválida para $path")
+        }
+        buildList { for (index in 0 until array.length()) add(mapper(array.getJSONObject(index))) }
     }
 
     private fun JSONObject.optNullableDouble(name: String): Double? =

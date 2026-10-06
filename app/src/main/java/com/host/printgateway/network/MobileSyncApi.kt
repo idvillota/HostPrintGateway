@@ -2,12 +2,6 @@ package com.host.printgateway.network
 
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.net.HttpURLConnection
-import java.net.URL
-import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 class SyncUnauthorized(message: String) : Exception(message)
@@ -47,6 +41,7 @@ class MobileSyncApi(
     private val baseUrl: String,
     private val token: String,
 ) {
+    private val client = ApiClient(baseUrl = baseUrl, token = token)
 
     fun registerDevice(deviceId: String): Result<Unit> = runCatching {
         request(
@@ -147,38 +142,14 @@ class MobileSyncApi(
     }
 
     private fun request(method: String, path: String, body: String?): String {
-        val connection = URL(baseUrl.trimEnd('/') + path).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = method
-            connection.connectTimeout = 15_000
-            connection.readTimeout = 30_000
-            connection.setRequestProperty("Accept", "application/json")
-            connection.setRequestProperty(BackendAuth.AUTHORIZATION_HEADER, BackendAuth.authorizationValue(token))
-            if (body != null) {
-                connection.doOutput = true
-                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
-                OutputStreamWriter(connection.outputStream, StandardCharsets.UTF_8).use { it.write(body) }
-            }
-            val stream = if (connection.responseCode in 200..299) {
-                connection.inputStream
-            } else {
-                connection.errorStream
-            }
-            val responseBody = if (stream == null) {
-                ""
-            } else {
-                BufferedReader(InputStreamReader(stream, StandardCharsets.UTF_8)).use { it.readText() }
-            }
-            if (connection.responseCode == 401) {
-                throw SyncUnauthorized("La sesión expiró")
-            }
-            if (connection.responseCode !in 200..299) {
-                error("$method $path HTTP ${connection.responseCode}: ${responseBody.take(200)}")
-            }
-            return responseBody.ifBlank { "{}" }
-        } finally {
-            connection.disconnect()
+        val response = client.call(method, path, jsonBody = body)
+        if (response.code == 401) {
+            throw SyncUnauthorized("La sesión expiró")
         }
+        if (response.code !in 200..299) {
+            error("$method $path HTTP ${response.code}: ${response.body.take(200)}")
+        }
+        return response.body.ifBlank { "{}" }
     }
 
     companion object {

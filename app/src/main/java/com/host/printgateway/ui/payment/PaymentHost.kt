@@ -8,8 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import android.provider.Settings
 import androidx.compose.ui.platform.LocalContext
+import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderEntity
@@ -71,10 +71,7 @@ fun PaymentHost(
 
     LaunchedEffect(catalogRevision, offlineMode) {
         if (!offlineMode && apiUrl.isNotBlank() && deviceToken.isNotBlank()) {
-            val deviceId = Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ANDROID_ID,
-            ) ?: "unknown-device"
+            val deviceId = DeviceIdProvider.get(context)
             val caughtUp = withContext(Dispatchers.IO) {
                 val catalog = repository.syncCatalog(apiUrl)
                 if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
@@ -132,10 +129,7 @@ fun PaymentHost(
                 notice = printed.exceptionOrNull()?.message ?: "No se pudo imprimir la factura"
                 return@launch
             }
-            val deviceId = Settings.Secure.getString(
-                context.contentResolver,
-                Settings.Secure.ANDROID_ID,
-            ) ?: "unknown-device"
+            val deviceId = DeviceIdProvider.get(context)
             val uploaded = withContext(Dispatchers.IO) {
                 repository.markPaidForSync(current.orderIds, paymentMethod, tip)
                 when {

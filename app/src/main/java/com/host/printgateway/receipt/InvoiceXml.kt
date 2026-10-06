@@ -1,8 +1,7 @@
 package com.host.printgateway.receipt
 
 import android.util.Xml
-import com.host.printgateway.printer.BluetoothEscPosPrinter
-import com.host.printgateway.printer.EscPosReceiptFormatter
+import com.host.printgateway.printer.PrintPipeline
 import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -75,14 +74,8 @@ object InvoiceXml {
         return writer.toString()
     }
 
-    suspend fun print(xml: String, printerMac: String): Result<Unit> {
-        if (printerMac.isBlank()) {
-            return Result.failure(IllegalStateException("Indica la MAC de la impresora en Configuración."))
-        }
-        val receipt = SalesReceiptXmlParser.parse(xml)
-        val bytes = EscPosReceiptFormatter().format(receipt)
-        return BluetoothEscPosPrinter(printerMac.trim()).print(bytes)
-    }
+    suspend fun print(xml: String, printerMac: String): Result<Unit> =
+        PrintPipeline.printSalesReceiptXml(xml, printerMac)
 
     private fun text(serializer: org.xmlpull.v1.XmlSerializer, tag: String, value: String) {
         serializer.startTag("", tag)
