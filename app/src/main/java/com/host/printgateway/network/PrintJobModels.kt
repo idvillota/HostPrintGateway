@@ -1,7 +1,7 @@
 package com.host.printgateway.network
 
 /**
- * Contracts aligned with Host docs: GET pending + POST ack (X-Print-Client-Token).
+ * Contracts aligned with Host docs: GET pending + POST ack (X-Api-Key).
  * API may not be deployed yet — client fails with a clear message until it is.
  */
 data class PrintJobDto(

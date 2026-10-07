@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.printer.EscPosReceiptFormatterTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:13" hostname="Ivans-MacBook-Air.local" time="0.252">
+  <properties/>
+  <testcase name="format_includes_trade_name_and_line_description" classname="com.host.printgateway.printer.EscPosReceiptFormatterTest" time="0.244"/>
+  <testcase name="formatTestTicket_includes_brand_and_mac_hint" classname="com.host.printgateway.printer.EscPosReceiptFormatterTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,23 @@
+package com.host.printgateway.printer;
+
+/**
+ * Single entry for ESC/POS rendering + Bluetooth send.
+ *
+ * Does not own Room queues or cloud ACK — callers keep their existing
+ * submit-now vs gateway-service workflows.
+ */
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000>\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\u0010\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0004\n\u0002\u0010\u0012\n\u0002\b\u0016\b\u00c6\u0002\u0018\u00002\u00020\u0001B\u0007\b\u0002\u00a2\u0006\u0002\u0010\u0002J,\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u000b0\n2\u0006\u0010\f\u001a\u00020\r2\u0006\u0010\u000e\u001a\u00020\u000fH\u0086@\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\u0010\u0010\u0011J,\u0010\u0012\u001a\b\u0012\u0004\u0012\u00020\u000b0\n2\u0006\u0010\u0013\u001a\u00020\u00142\u0006\u0010\u000e\u001a\u00020\u000fH\u0086@\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\u0015\u0010\u0016J,\u0010\u0017\u001a\b\u0012\u0004\u0012\u00020\u000b0\n2\u0006\u0010\u0018\u001a\u00020\u000f2\u0006\u0010\u000e\u001a\u00020\u000fH\u0086@\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\u0019\u0010\u001aJ,\u0010\u001b\u001a\b\u0012\u0004\u0012\u00020\u000b0\n2\u0006\u0010\u0018\u001a\u00020\u000f2\u0006\u0010\u000e\u001a\u00020\u000fH\u0086@\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\u001c\u0010\u001aJ$\u0010\u001d\u001a\b\u0012\u0004\u0012\u00020\u000b0\n2\u0006\u0010\u000e\u001a\u00020\u000fH\u0086@\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\u001e\u0010\u001fJ!\u0010 \u001a\b\u0012\u0004\u0012\u00020\u00140\n2\u0006\u0010\f\u001a\u00020\r\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b!\u0010\"J!\u0010#\u001a\b\u0012\u0004\u0012\u00020\u00140\n2\u0006\u0010\u0018\u001a\u00020\u000f\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b$\u0010%J!\u0010&\u001a\b\u0012\u0004\u0012\u00020\u00140\n2\u0006\u0010\u0018\u001a\u00020\u000f\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b\'\u0010%J!\u0010(\u001a\b\u0012\u0004\u0012\u00020\u000f0\n2\u0006\u0010\u000e\u001a\u00020\u000f\u00f8\u0001\u0000\u00f8\u0001\u0001\u00a2\u0006\u0004\b)\u0010%R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0005\u001a\u00020\u0006X\u0082\u0004\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0007\u001a\u00020\bX\u0082\u0004\u00a2\u0006\u0002\n\u0000\u0082\u0002\u000b\n\u0002\b!\n\u0005\b\u00a1\u001e0\u0001\u00a8\u0006*"}, d2 = {"Lcom/host/printgateway/printer/PrintPipeline;", "", "()V", "jobRenderer", "Lcom/host/printgateway/printer/PrintJobRenderer;", "kitchenFormatter", "Lcom/host/printgateway/printer/KitchenTicketFormatter;", "receiptFormatter", "Lcom/host/printgateway/printer/EscPosReceiptFormatter;", "printCloudJob", "Lkotlin/Result;", "", "job", "Lcom/host/printgateway/network/PrintJobDto;", "printerMac", "", "printCloudJob-0E7RQCE", "(Lcom/host/printgateway/network/PrintJobDto;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "printEscPosBytes", "bytes", "", "printEscPosBytes-0E7RQCE", "([BLjava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "printKitchenTicketXml", "xml", "printKitchenTicketXml-0E7RQCE", "(Ljava/lang/String;Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "printSalesReceiptXml", "printSalesReceiptXml-0E7RQCE", "printTestTicket", "printTestTicket-gIAlu-s", "(Ljava/lang/String;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", "renderCloudJob", "renderCloudJob-IoAF18A", "(Lcom/host/printgateway/network/PrintJobDto;)Ljava/lang/Object;", "renderKitchenTicketXml", "renderKitchenTicketXml-IoAF18A", "(Ljava/lang/String;)Ljava/lang/Object;", "renderSalesReceiptXml", "renderSalesReceiptXml-IoAF18A", "requirePrinterMac", "requirePrinterMac-IoAF18A", "app_debug"})
+public final class PrintPipeline {
+    @org.jetbrains.annotations.NotNull()
+    private static final com.host.printgateway.printer.KitchenTicketFormatter kitchenFormatter = null;
+    @org.jetbrains.annotations.NotNull()
+    private static final com.host.printgateway.printer.EscPosReceiptFormatter receiptFormatter = null;
+    @org.jetbrains.annotations.NotNull()
+    private static final com.host.printgateway.printer.PrintJobRenderer jobRenderer = null;
+    @org.jetbrains.annotations.NotNull()
+    public static final com.host.printgateway.printer.PrintPipeline INSTANCE = null;
+    
+    private PrintPipeline() {
+        super();
+    }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.receipt.SalesReceiptXmlParserTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:58" hostname="Ivans-MacBook-Air.local" time="0.334">
+  <properties/>
+  <testcase name="parse_reads_header_lines_and_totals" classname="com.host.printgateway.receipt.SalesReceiptXmlParserTest" time="0.334"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

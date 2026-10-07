@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.data.LocalAccountActionsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:08" hostname="Ivans-MacBook-Air.local" time="2.331">
+  <properties/>
+  <testcase name="closeAccountsOnFreeTables_returns_false_when_no_matching_free_ids" classname="com.host.printgateway.data.LocalAccountActionsTest" time="2.18"/>
+  <testcase name="freeSettledTables_only_when_no_unpaid_remain" classname="com.host.printgateway.data.LocalAccountActionsTest" time="0.051"/>
+  <testcase name="closeAccountsOnFreeTables_marks_remote_unpaid_orders_paid_and_frees_table" classname="com.host.printgateway.data.LocalAccountActionsTest" time="0.099"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

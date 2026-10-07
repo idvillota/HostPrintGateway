@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.network.CatalogApiFetchTableAccountsTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:13" hostname="Ivans-MacBook-Air.local" time="0.048">
+  <properties/>
+  <testcase name="fetchTableAccounts_reads_items_wrapper" classname="com.host.printgateway.network.CatalogApiFetchTableAccountsTest" time="0.03"/>
+  <testcase name="fetchTableAccounts_uses_sales_orders_tables_endpoint" classname="com.host.printgateway.network.CatalogApiFetchTableAccountsTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

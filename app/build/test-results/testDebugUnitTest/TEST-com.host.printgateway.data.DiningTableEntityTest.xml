@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.data.DiningTableEntityTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:21:48" hostname="Ivans-MacBook-Air.local" time="0.061">
+  <properties/>
+  <testcase name="isOccupied_accepts_numeric_and_busy_status" classname="com.host.printgateway.data.DiningTableEntityTest" time="0.061"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

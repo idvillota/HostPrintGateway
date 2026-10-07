@@ -1,0 +1,139 @@
+package com.host.printgateway.data;
+
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000*\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0002\b\u0003\n\u0002\u0010\u000b\n\u0002\b\u001d\b\u0087\b\u0018\u00002\u00020\u0001BK\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u0012\u0006\u0010\u0004\u001a\u00020\u0003\u0012\u0006\u0010\u0005\u001a\u00020\u0006\u0012\b\u0010\u0007\u001a\u0004\u0018\u00010\u0003\u0012\b\u0010\b\u001a\u0004\u0018\u00010\t\u0012\b\u0010\n\u001a\u0004\u0018\u00010\t\u0012\u0006\u0010\u000b\u001a\u00020\u0003\u0012\u0006\u0010\f\u001a\u00020\r\u00a2\u0006\u0002\u0010\u000eJ\t\u0010\u001b\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\u001c\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\u001d\u001a\u00020\u0006H\u00c6\u0003J\u000b\u0010\u001e\u001a\u0004\u0018\u00010\u0003H\u00c6\u0003J\u0010\u0010\u001f\u001a\u0004\u0018\u00010\tH\u00c6\u0003\u00a2\u0006\u0002\u0010\u0016J\u0010\u0010 \u001a\u0004\u0018\u00010\tH\u00c6\u0003\u00a2\u0006\u0002\u0010\u0016J\t\u0010!\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\"\u001a\u00020\rH\u00c6\u0003Jd\u0010#\u001a\u00020\u00002\b\b\u0002\u0010\u0002\u001a\u00020\u00032\b\b\u0002\u0010\u0004\u001a\u00020\u00032\b\b\u0002\u0010\u0005\u001a\u00020\u00062\n\b\u0002\u0010\u0007\u001a\u0004\u0018\u00010\u00032\n\b\u0002\u0010\b\u001a\u0004\u0018\u00010\t2\n\b\u0002\u0010\n\u001a\u0004\u0018\u00010\t2\b\b\u0002\u0010\u000b\u001a\u00020\u00032\b\b\u0002\u0010\f\u001a\u00020\rH\u00c6\u0001\u00a2\u0006\u0002\u0010$J\u0013\u0010%\u001a\u00020\r2\b\u0010&\u001a\u0004\u0018\u00010\u0001H\u00d6\u0003J\t\u0010\'\u001a\u00020\u0006H\u00d6\u0001J\u0006\u0010(\u001a\u00020\rJ\t\u0010)\u001a\u00020\u0003H\u00d6\u0001R\u0011\u0010\u0005\u001a\u00020\u0006\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000f\u0010\u0010R\u0011\u0010\u0004\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0011\u0010\u0012R\u0016\u0010\u0002\u001a\u00020\u00038\u0006X\u0087\u0004\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0013\u0010\u0012R\u0011\u0010\f\u001a\u00020\r\u00a2\u0006\b\n\u0000\u001a\u0004\b\f\u0010\u0014R\u0015\u0010\b\u001a\u0004\u0018\u00010\t\u00a2\u0006\n\n\u0002\u0010\u0017\u001a\u0004\b\u0015\u0010\u0016R\u0015\u0010\n\u001a\u0004\u0018\u00010\t\u00a2\u0006\n\n\u0002\u0010\u0017\u001a\u0004\b\u0018\u0010\u0016R\u0011\u0010\u000b\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0019\u0010\u0012R\u0013\u0010\u0007\u001a\u0004\u0018\u00010\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u001a\u0010\u0012\u00a8\u0006*"}, d2 = {"Lcom/host/printgateway/data/DiningTableEntity;", "", "id", "", "code", "capacity", "", "zone", "layoutX", "", "layoutY", "status", "isActive", "", "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Z)V", "getCapacity", "()I", "getCode", "()Ljava/lang/String;", "getId", "()Z", "getLayoutX", "()Ljava/lang/Double;", "Ljava/lang/Double;", "getLayoutY", "getStatus", "getZone", "component1", "component2", "component3", "component4", "component5", "component6", "component7", "component8", "copy", "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/Double;Ljava/lang/Double;Ljava/lang/String;Z)Lcom/host/printgateway/data/DiningTableEntity;", "equals", "other", "hashCode", "isOccupied", "toString", "app_debug"})
+@androidx.room.Entity(tableName = "dining_tables")
+public final class DiningTableEntity {
+    @androidx.room.PrimaryKey()
+    @org.jetbrains.annotations.NotNull()
+    private final java.lang.String id = null;
+    @org.jetbrains.annotations.NotNull()
+    private final java.lang.String code = null;
+    private final int capacity = 0;
+    @org.jetbrains.annotations.Nullable()
+    private final java.lang.String zone = null;
+    @org.jetbrains.annotations.Nullable()
+    private final java.lang.Double layoutX = null;
+    @org.jetbrains.annotations.Nullable()
+    private final java.lang.Double layoutY = null;
+    @org.jetbrains.annotations.NotNull()
+    private final java.lang.String status = null;
+    private final boolean isActive = false;
+    
+    public DiningTableEntity(@org.jetbrains.annotations.NotNull()
+    java.lang.String id, @org.jetbrains.annotations.NotNull()
+    java.lang.String code, int capacity, @org.jetbrains.annotations.Nullable()
+    java.lang.String zone, @org.jetbrains.annotations.Nullable()
+    java.lang.Double layoutX, @org.jetbrains.annotations.Nullable()
+    java.lang.Double layoutY, @org.jetbrains.annotations.NotNull()
+    java.lang.String status, boolean isActive) {
+        super();
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String getId() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String getCode() {
+        return null;
+    }
+    
+    public final int getCapacity() {
+        return 0;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.String getZone() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.Double getLayoutX() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.Double getLayoutY() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String getStatus() {
+        return null;
+    }
+    
+    public final boolean isActive() {
+        return false;
+    }
+    
+    public final boolean isOccupied() {
+        return false;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String component1() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String component2() {
+        return null;
+    }
+    
+    public final int component3() {
+        return 0;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.String component4() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.Double component5() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.Nullable()
+    public final java.lang.Double component6() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String component7() {
+        return null;
+    }
+    
+    public final boolean component8() {
+        return false;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final com.host.printgateway.data.DiningTableEntity copy(@org.jetbrains.annotations.NotNull()
+    java.lang.String id, @org.jetbrains.annotations.NotNull()
+    java.lang.String code, int capacity, @org.jetbrains.annotations.Nullable()
+    java.lang.String zone, @org.jetbrains.annotations.Nullable()
+    java.lang.Double layoutX, @org.jetbrains.annotations.Nullable()
+    java.lang.Double layoutY, @org.jetbrains.annotations.NotNull()
+    java.lang.String status, boolean isActive) {
+        return null;
+    }
+    
+    @java.lang.Override()
+    public boolean equals(@org.jetbrains.annotations.Nullable()
+    java.lang.Object other) {
+        return false;
+    }
+    
+    @java.lang.Override()
+    public int hashCode() {
+        return 0;
+    }
+    
+    @java.lang.Override()
+    @org.jetbrains.annotations.NotNull()
+    public java.lang.String toString() {
+        return null;
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.data.TableSettleTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:12" hostname="Ivans-MacBook-Air.local" time="0.008">
+  <properties/>
+  <testcase name="freeHostTableIds_empty_when_all_occupied" classname="com.host.printgateway.data.TableSettleTest" time="0.003"/>
+  <testcase name="freeHostTableIds_includes_null_and_blank_open_orders_lowercased" classname="com.host.printgateway.data.TableSettleTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
