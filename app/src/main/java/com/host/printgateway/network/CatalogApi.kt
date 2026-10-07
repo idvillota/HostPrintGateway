@@ -15,9 +15,9 @@ data class RemoteProductPage(val products: List<RemoteProduct>, val productIngre
 class CatalogApi(
     private val baseUrl: String,
     private val token: String = BackendAuth.DEFAULT_TOKEN,
+    private val client: ApiClient = ApiClient(baseUrl = baseUrl, token = token),
+    private val pingHttp: ApiClient = ApiClient(baseUrl = baseUrl, token = token, http = HostHttp.pingClient),
 ) {
-    private val client = ApiClient(baseUrl = baseUrl, token = token)
-    private val pingHttp = ApiClient(baseUrl = baseUrl, token = token, http = HostHttp.pingClient)
 
     fun fetchTables(): Result<List<RemoteTable>> = request("/api/DiningTables") { item ->
         RemoteTable(
@@ -30,8 +30,13 @@ class CatalogApi(
         )
     }
 
+    /**
+     * Lightweight reachability check. Uses /health (not salon table summaries)
+     * so the API is not hit with ListTableSummaries every few seconds.
+     * Session expiry is still detected by authenticated loops (auto-sync, settle tables, sale stream).
+     */
     fun ping(): Result<Unit> = runCatching {
-        val response = pingHttp.call("GET", "/api/SalesOrders/tables")
+        val response = pingHttp.call("GET", "/health")
         if (response.code == 401) throw SyncUnauthorized("La sesión expiró")
         if (response.code !in 200..299) error("HOST no responde")
     }

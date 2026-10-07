@@ -25,9 +25,6 @@ import kotlinx.coroutines.withContext
 
 enum class OfflineNotice { None, Offer, Resume }
 
-private const val OFFLINE_AFTER_MS = 20_000L
-private const val REACH_POLL_MS = 5_000L
-
 /**
  * Background sync / reachability / sale-stream loops formerly inline in [HostApp].
  * Sequences and keys match the previous LaunchedEffect blocks.
@@ -82,14 +79,14 @@ fun HostSyncEffects(
                         if (offlineMode) OfflineNotice.Resume else OfflineNotice.None,
                     )
                 }
-                !offlineMode && now - lastReachableAt >= OFFLINE_AFTER_MS -> {
+                !offlineMode && now - lastReachableAt >= HostSyncTiming.OFFLINE_AFTER_MS -> {
                     onOfflineNoticeChange(OfflineNotice.Offer)
                 }
                 offlineMode && offlineNoticeNow.value == OfflineNotice.Resume -> {
                     onOfflineNoticeChange(OfflineNotice.None)
                 }
             }
-            delay(REACH_POLL_MS)
+            delay(HostSyncTiming.REACH_POLL_MS)
         }
     }
 
@@ -115,7 +112,7 @@ fun HostSyncEffects(
         if (offlineMode || token.isBlank() || savedApiUrl.isBlank()) return@LaunchedEffect
         val repository = RestaurantRepository(database, token)
         while (isActive) {
-            delay(15_000)
+            delay(HostSyncTiming.TABLE_SETTLE_POLL_MS)
             val released = withContext(Dispatchers.IO) {
                 repository.releaseTablesSettledOnHost(savedApiUrl)
             }

@@ -9,179 +9,179 @@
 9        android:targetSdkVersion="34" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:4:5-67
-11-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:4:22-64
+11-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:4:5-67
+11-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:4:22-64
 12    <uses-permission
-12-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:5:5-95
+12-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:5:5-95
 13        android:name="android.permission.BLUETOOTH"
-13-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:5:22-65
+13-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:5:22-65
 14        android:maxSdkVersion="30" />
-14-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:5:66-92
+14-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:5:66-92
 15    <uses-permission
-15-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:6:5-101
+15-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:6:5-101
 16        android:name="android.permission.BLUETOOTH_ADMIN"
-16-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:6:22-71
+16-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:6:22-71
 17        android:maxSdkVersion="30" />
-17-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:6:72-98
+17-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:6:72-98
 18    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-18-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:7:5-76
-18-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:7:22-73
+18-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:7:5-76
+18-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:7:22-73
 19    <uses-permission
-19-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:8:5-10:58
+19-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:8:5-10:58
 20        android:name="android.permission.BLUETOOTH_SCAN"
-20-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:9:9-57
+20-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:9:9-57
 21        android:usesPermissionFlags="neverForLocation" />
-21-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:10:9-55
+21-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:10:9-55
 22    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-22-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:11:5-77
-22-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:11:22-74
+22-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:11:5-77
+22-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:11:22-74
 23    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-23-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:12:5-94
-23-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:12:22-91
+23-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:12:5-94
+23-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:12:22-91
 24    <uses-permission android:name="android.permission.WAKE_LOCK" />
-24-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:13:5-68
-24-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:13:22-65
+24-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:13:5-68
+24-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:13:22-65
 25    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-25-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:14:5-95
-25-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:14:22-92
+25-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:14:5-95
+25-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:14:22-92
 26    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-26-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:5-77
-26-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:15:22-74
+26-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:15:5-77
+26-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:15:22-74
 27
 28    <permission
-28-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+28-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
 29        android:name="com.host.printgateway.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-29-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+29-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:23:9-81
 30        android:protectionLevel="signature" />
-30-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+30-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:24:9-44
 31
 32    <uses-permission android:name="com.host.printgateway.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-32-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
-32-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+32-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:26:5-97
+32-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 33
 34    <application
-34-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:17:5-41:19
+34-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:17:5-41:19
 35        android:allowBackup="false"
-35-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:18:9-36
+35-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:18:9-36
 36        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-36-->[androidx.core:core:1.12.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\01be542a8a7642ecba403b94caa2bdf6\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+36-->[androidx.core:core:1.12.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/01be542a8a7642ecba403b94caa2bdf6/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
 37        android:debuggable="true"
 38        android:extractNativeLibs="false"
 39        android:icon="@drawable/host_logo"
-39-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:19:9-43
+39-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:19:9-43
 40        android:label="Host Lite"
-40-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:21:9-34
+40-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:21:9-34
 41        android:roundIcon="@drawable/host_logo"
-41-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:20:9-48
+41-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:20:9-48
 42        android:supportsRtl="true"
-42-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:22:9-35
+42-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:22:9-35
 43        android:theme="@android:style/Theme.Material.Light.NoActionBar"
-43-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:24:9-72
+43-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:24:9-72
 44        android:usesCleartextTraffic="true" >
-44-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:23:9-44
+44-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:23:9-44
 45        <service
-45-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:26:9-29:63
+45-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:26:9-29:63
 46            android:name="com.host.printgateway.service.PrintGatewayService"
-46-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:27:13-56
+46-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:27:13-56
 47            android:exported="false"
-47-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:28:13-37
+47-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:28:13-37
 48            android:foregroundServiceType="connectedDevice" />
-48-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:29:13-60
+48-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:29:13-60
 49
 50        <activity
-50-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:31:9-40:20
+50-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:31:9-40:20
 51            android:name="com.host.printgateway.ui.MainActivity"
-51-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:32:13-44
+51-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:32:13-44
 52            android:exported="true"
-52-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:33:13-36
+52-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:33:13-36
 53            android:launchMode="singleTop"
-53-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:34:13-43
+53-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:34:13-43
 54            android:windowSoftInputMode="adjustResize" >
-54-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:35:13-55
+54-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:35:13-55
 55            <intent-filter>
-55-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:36:13-39:29
+55-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:36:13-39:29
 56                <action android:name="android.intent.action.MAIN" />
-56-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:37:17-69
-56-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:37:25-66
+56-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:37:17-69
+56-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:37:25-66
 57
 58                <category android:name="android.intent.category.LAUNCHER" />
-58-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:38:17-77
-58-->C:\repos\HostPrintGateway\app\src\main\AndroidManifest.xml:38:27-74
+58-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:38:17-77
+58-->/Users/idvillota/Desktop/idv/Omnia/Host/apps/HostPrintGateway/app/src/main/AndroidManifest.xml:38:27-74
 59            </intent-filter>
 60        </activity>
 61
 62        <provider
-62-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+62-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
 63            android:name="androidx.startup.InitializationProvider"
-63-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+63-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
 64            android:authorities="com.host.printgateway.androidx-startup"
-64-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+64-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
 65            android:exported="false" >
-65-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+65-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
 66            <meta-data
-66-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+66-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
 67                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-67-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+67-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
 68                android:value="androidx.startup" />
-68-->[androidx.emoji2:emoji2:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f56bf3def91dedb6a80130f2ae309db\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+68-->[androidx.emoji2:emoji2:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f56bf3def91dedb6a80130f2ae309db/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
 69            <meta-data
-69-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\86ffc40331241160dd6ae3395fef3d53\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:29:13-31:52
+69-->[androidx.lifecycle:lifecycle-process:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/86ffc40331241160dd6ae3395fef3d53/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
 70                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-70-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\86ffc40331241160dd6ae3395fef3d53\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:30:17-78
+70-->[androidx.lifecycle:lifecycle-process:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/86ffc40331241160dd6ae3395fef3d53/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
 71                android:value="androidx.startup" />
-71-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\86ffc40331241160dd6ae3395fef3d53\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:31:17-49
+71-->[androidx.lifecycle:lifecycle-process:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/86ffc40331241160dd6ae3395fef3d53/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
 72            <meta-data
-72-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+72-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
 73                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-73-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+73-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
 74                android:value="androidx.startup" />
-74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+74-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
 75        </provider>
 76
 77        <service
-77-->[androidx.room:room-runtime:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\001d992114bee161356b4690d627c5c0\transformed\room-runtime-2.6.1\AndroidManifest.xml:24:9-28:63
+77-->[androidx.room:room-runtime:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/001d992114bee161356b4690d627c5c0/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
 78            android:name="androidx.room.MultiInstanceInvalidationService"
-78-->[androidx.room:room-runtime:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\001d992114bee161356b4690d627c5c0\transformed\room-runtime-2.6.1\AndroidManifest.xml:25:13-74
+78-->[androidx.room:room-runtime:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/001d992114bee161356b4690d627c5c0/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
 79            android:directBootAware="true"
-79-->[androidx.room:room-runtime:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\001d992114bee161356b4690d627c5c0\transformed\room-runtime-2.6.1\AndroidManifest.xml:26:13-43
+79-->[androidx.room:room-runtime:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/001d992114bee161356b4690d627c5c0/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
 80            android:exported="false" />
-80-->[androidx.room:room-runtime:2.6.1] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\001d992114bee161356b4690d627c5c0\transformed\room-runtime-2.6.1\AndroidManifest.xml:27:13-37
+80-->[androidx.room:room-runtime:2.6.1] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/001d992114bee161356b4690d627c5c0/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
 81
 82        <receiver
-82-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+82-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
 83            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-83-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+83-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
 84            android:directBootAware="false"
-84-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+84-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
 85            android:enabled="true"
-85-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+85-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
 86            android:exported="true"
-86-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+86-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
 87            android:permission="android.permission.DUMP" >
-87-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
 88            <intent-filter>
-88-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
 89                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-89-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
-89-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+89-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+89-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
 90            </intent-filter>
 91            <intent-filter>
-91-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+91-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
 92                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-92-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
-92-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
 93            </intent-filter>
 94            <intent-filter>
-94-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+94-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
 95                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-95-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
-95-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
 96            </intent-filter>
 97            <intent-filter>
-97-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+97-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
 98                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-98-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
-98-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\GABRIEL\AppData\Local\Temp\cursor-sandbox-cache\d50bdf310389a8c58dcd37eb3af0338e\gradle\caches\transforms-3\5f7ce29a25973535d221a2c1da52466d\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /private/var/folders/w0/05vl34z92md6c639j8fyk5n80000gp/T/cursor-sandbox-cache/5efd040e5a3544b5b8227c2977afd9e6/gradle/caches/transforms-3/5f7ce29a25973535d221a2c1da52466d/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
 99            </intent-filter>
 100        </receiver>
 101    </application>

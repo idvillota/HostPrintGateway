@@ -8,6 +8,7 @@ object BackendAuth {
 
     fun authorizationValue(token: String): String {
         val cleanToken = token
+            .trim()
             .removePrefix("Bearer ")
             .trim()
 

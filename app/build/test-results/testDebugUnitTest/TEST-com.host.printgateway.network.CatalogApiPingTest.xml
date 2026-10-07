@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.network.CatalogApiPingTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:13" hostname="Ivans-MacBook-Air.local" time="0.053">
+  <properties/>
+  <testcase name="ping_fails_on_non_success_status" classname="com.host.printgateway.network.CatalogApiPingTest" time="0.005"/>
+  <testcase name="ping_calls_health_not_sales_order_tables" classname="com.host.printgateway.network.CatalogApiPingTest" time="0.024"/>
+  <testcase name="ping_maps_401_to_sync_unauthorized" classname="com.host.printgateway.network.CatalogApiPingTest" time="0.02"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

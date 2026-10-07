@@ -24,11 +24,7 @@ class SyncRepository(
 
     suspend fun releaseTablesSettledOnHost(baseUrl: String): Result<Boolean> = runCatching {
         val summaries = CatalogApi(baseUrl, deviceToken).fetchTableAccounts().getOrThrow()
-        val freeIds = summaries
-            .filter { it.openOrderId.isNullOrBlank() }
-            .map { it.tableId.lowercase() }
-            .toSet()
-        LocalAccountActions.closeAccountsOnFreeTables(dao, freeIds)
+        LocalAccountActions.closeAccountsOnFreeTables(dao, TableSettle.freeHostTableIds(summaries))
     }
 
     suspend fun releaseNotifiedTables(tableIds: List<String>): Boolean =

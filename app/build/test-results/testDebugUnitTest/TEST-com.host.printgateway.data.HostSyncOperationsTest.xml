@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.data.HostSyncOperationsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:21:48" hostname="Ivans-MacBook-Air.local" time="19.835">
+  <properties/>
+  <testcase name="pushThenPull_completes_full_sequence_and_stores_cursor" classname="com.host.printgateway.data.HostSyncOperationsTest" time="18.899"/>
+  <testcase name="pushThenPull_stops_on_unauthorized_upload" classname="com.host.printgateway.data.HostSyncOperationsTest" time="0.45"/>
+  <testcase name="pushThenPull_maps_catalog_failure" classname="com.host.printgateway.data.HostSyncOperationsTest" time="0.484"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

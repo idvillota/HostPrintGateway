@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.host.printgateway.printer.PrintPipelineTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-07T12:22:14" hostname="Ivans-MacBook-Air.local" time="43.337">
+  <properties/>
+  <testcase name="requirePrinterMac_rejects_blank" classname="com.host.printgateway.printer.PrintPipelineTest" time="41.975"/>
+  <testcase name="requirePrinterMac_trims_value" classname="com.host.printgateway.printer.PrintPipelineTest" time="0.543"/>
+  <testcase name="renderKitchenTicketXml_produces_escpos_with_comanda_header" classname="com.host.printgateway.printer.PrintPipelineTest" time="0.541"/>
+  <testcase name="renderSalesReceiptXml_produces_escpos_bytes" classname="com.host.printgateway.printer.PrintPipelineTest" time="0.277"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
