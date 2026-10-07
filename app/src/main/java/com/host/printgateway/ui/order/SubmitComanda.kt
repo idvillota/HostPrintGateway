@@ -39,6 +39,17 @@ class SubmitComanda(
                     "Indica la MAC de la impresora en Configuración.",
                 )
             }
+            if (ticket.isPrinted) {
+                return SubmitOutcome.Printed(orderId)
+            }
+            if (dao.claimTicketForPrinting(ticket.id) == 0) {
+                val latest = dao.getTicketForOrder(orderId)
+                return if (latest?.isPrinted == true) {
+                    SubmitOutcome.Printed(orderId)
+                } else {
+                    SubmitOutcome.NeedsRetry(orderId, "La comanda ya se está imprimiendo.")
+                }
+            }
             val printed = PrintPipeline.printKitchenTicketXml(ticket.payload, printerMac)
             if (printed.isFailure) {
                 val reason = printed.exceptionOrNull()?.message ?: "No se pudo imprimir"

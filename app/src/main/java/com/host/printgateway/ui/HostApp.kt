@@ -30,8 +30,10 @@ import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.HostSyncOperations
 import com.host.printgateway.data.PrintGatewayDatabase
+import com.host.printgateway.network.ActiveSaleChannel
 import com.host.printgateway.network.AuthManager
 import com.host.printgateway.network.JwtExpiry
+import com.host.printgateway.service.IncomingPrint
 import com.host.printgateway.ui.home.HomeScreen
 import com.host.printgateway.ui.login.LoginScreen
 import com.host.printgateway.ui.navigation.AppRoute
@@ -281,12 +283,16 @@ fun HostApp(
                         printerMac.isBlank() -> settingsStatus = "Indica la MAC de la impresora."
                         else -> {
                             onEnsurePermissions()
+                            IncomingPrint.accept()
                             onStartGateway()
-                            settingsStatus = "Gateway iniciado"
+                            ActiveSaleChannel.announce(ready = true, fresh = true)
+                            settingsStatus = "Gateway iniciado. Se imprimen las comandas nuevas."
                         }
                     }
                 },
                 onStopGateway = {
+                    ActiveSaleChannel.announce(ready = false)
+                    IncomingPrint.stop()
                     onStopGateway()
                     settingsStatus = "Gateway detenido"
                 },

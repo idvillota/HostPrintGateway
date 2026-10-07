@@ -1,6 +1,7 @@
 package com.host.printgateway.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
@@ -8,10 +9,12 @@ import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.HostSyncOperations
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.RestaurantRepository
+import com.host.printgateway.network.ActiveSaleChannel
 import com.host.printgateway.network.CatalogApi
 import com.host.printgateway.network.SaleChannel
 import com.host.printgateway.network.SaleListenEnd
 import com.host.printgateway.network.SyncUnauthorized
+import com.host.printgateway.service.IncomingPrint
 import com.host.printgateway.ui.order.OrderSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +51,10 @@ fun HostSyncEffects(
     onUnauthorized: () -> Unit,
 ) {
     val offlineNoticeNow = rememberUpdatedState(offlineNotice)
+    DisposableEffect(Unit) {
+        IncomingPrint.onReplay = { ActiveSaleChannel.announce(ready = true, fresh = false) }
+        onDispose { IncomingPrint.onReplay = null }
+    }
 
     fun notifyIfUnauthorized(error: Throwable?) {
         if (error is SyncUnauthorized) onUnauthorized()
@@ -141,8 +148,10 @@ fun HostSyncEffects(
         val currentDeviceId = deviceId
         while (isActive) {
             val channel = SaleChannel(savedApiUrl, token, currentDeviceId)
+            ActiveSaleChannel.attach(channel)
             val end = try {
                 channel.listen(
+                    onPrint = { job -> IncomingPrint.offer(job) },
                     onSale = { sale ->
                         scope.launch {
                             withContext(Dispatchers.IO) {
@@ -163,6 +172,9 @@ fun HostSyncEffects(
                         }
                     },
                     onConnected = {
+                        if (IncomingPrint.accepting) {
+                            channel.announcePrinting(ready = true, fresh = false)
+                        }
                         scope.launch {
                             val unauthorized = withContext(Dispatchers.IO) {
                                 HostSyncOperations.reconcileAfterSaleChannelConnect(
@@ -182,6 +194,7 @@ fun HostSyncEffects(
                     },
                 )
             } finally {
+                ActiveSaleChannel.detach(channel)
                 channel.close()
             }
             if (end == SaleListenEnd.Unauthorized) {

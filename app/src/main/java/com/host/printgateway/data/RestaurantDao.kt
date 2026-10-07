@@ -172,6 +172,9 @@ abstract class RestaurantDao {
     @Query("SELECT * FROM printer_stations WHERE id = :id LIMIT 1")
     abstract suspend fun getPrinter(id: String): PrinterStationEntity?
 
+    @Query("UPDATE kitchen_tickets SET status = 'PRINTING' WHERE id = :id AND isPrinted = 0 AND status != 'PRINTING'")
+    abstract suspend fun claimTicketForPrinting(id: String): Int
+
     @Query("UPDATE kitchen_tickets SET isPrinted = 1, status = 'PRINTED', printedAt = :printedAt, lastError = NULL WHERE id = :id")
     abstract suspend fun markTicketPrinted(id: String, printedAt: Long)
 

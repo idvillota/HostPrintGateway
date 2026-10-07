@@ -17,6 +17,7 @@ import androidx.sqlite.db.SupportSQLiteStatement;
 import java.lang.Class;
 import java.lang.Double;
 import java.lang.Exception;
+import java.lang.Integer;
 import java.lang.Long;
 import java.lang.Object;
 import java.lang.Override;
@@ -81,6 +82,8 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   private final SharedSQLiteStatement __preparedStmtOfMarkOrderSyncFailed;
 
   private final SharedSQLiteStatement __preparedStmtOfSaveRemoteOrderId;
+
+  private final SharedSQLiteStatement __preparedStmtOfClaimTicketForPrinting;
 
   private final SharedSQLiteStatement __preparedStmtOfMarkTicketPrinted;
 
@@ -607,6 +610,14 @@ public final class RestaurantDao_Impl extends RestaurantDao {
       @NonNull
       public String createQuery() {
         final String _query = "UPDATE orders SET remoteId = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfClaimTicketForPrinting = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE kitchen_tickets SET status = 'PRINTING' WHERE id = ? AND isPrinted = 0 AND status != 'PRINTING'";
         return _query;
       }
     };
@@ -1214,6 +1225,36 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           }
         } finally {
           __preparedStmtOfSaveRemoteOrderId.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object claimTicketForPrinting(final String id,
+      final Continuation<? super Integer> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfClaimTicketForPrinting.acquire();
+        int _argIndex = 1;
+        if (id == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, id);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            final Integer _result = _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return _result;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfClaimTicketForPrinting.release(_stmt);
         }
       }
     }, $completion);

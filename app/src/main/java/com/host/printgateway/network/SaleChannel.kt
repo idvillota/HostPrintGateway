@@ -7,6 +7,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -21,14 +22,19 @@ class SaleChannel(
     private val deviceId: String,
 ) {
     private val client = HostHttp.webSocketClient
+    private val announceLock = Any()
 
     @Volatile
     private var socket: WebSocket? = null
+
+    @Volatile
+    private var pendingFresh: Boolean? = null
 
     suspend fun listen(
         onSale: (RemoteSale) -> Unit,
         onConnected: () -> Unit,
         onTablesAvailable: (List<String>) -> Unit = {},
+        onPrint: (PrintJobDto) -> Unit = {},
     ): SaleListenEnd = suspendCancellableCoroutine { continuation ->
         val finished = AtomicBoolean(false)
         fun finish(end: SaleListenEnd) {
@@ -42,12 +48,34 @@ class SaleChannel(
             .build()
         val webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
+                synchronized(announceLock) {
+                    socket = webSocket
+                    val queued = pendingFresh
+                    pendingFresh = null
+                    if (queued != null) sendReady(webSocket, queued)
+                }
                 onConnected()
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 val json = runCatching { JSONObject(text) }.getOrNull() ?: return
                 val type = json.optString("type")
+                if (type.equals("print", ignoreCase = true)) {
+                    val id = json.optString("id")
+                    val format = json.optString("payloadFormat")
+                    val payload = json.optString("payload")
+                    if (id.isNotBlank() && format.isNotBlank() && payload.isNotBlank()) {
+                        onPrint(
+                            PrintJobDto(
+                                id = id,
+                                kind = json.optString("kind", "kitchen"),
+                                payloadFormat = format,
+                                payload = payload,
+                            ),
+                        )
+                    }
+                    return
+                }
                 if (type.equals("tablesAvailable", ignoreCase = true)) {
                     val ids = json.optJSONArray("tableIds") ?: return
                     val tables = buildList {
@@ -71,17 +99,40 @@ class SaleChannel(
                 finish(SaleListenEnd.Closed)
             }
         })
-        socket = webSocket
         continuation.invokeOnCancellation {
             webSocket.cancel()
         }
     }
 
+    fun announcePrinting(ready: Boolean, fresh: Boolean = false) {
+        synchronized(announceLock) {
+            if (!ready) {
+                pendingFresh = null
+                socket?.send("""{"type":"printIdle"}""")
+                return
+            }
+            val current = socket
+            if (current == null) {
+                pendingFresh = fresh || pendingFresh == true
+                return
+            }
+            sendReady(current, fresh)
+        }
+    }
+
+    private fun sendReady(webSocket: WebSocket, fresh: Boolean) {
+        val freshField = if (fresh) ""","fresh":true""" else ""
+        webSocket.send("""{"type":"printReady"$freshField}""")
+    }
+
     fun close() {
         // Close only this socket. Never shut down HostHttp.webSocketClient —
         // HostApp reconnects SaleChannel for the whole session.
-        socket?.close(1000, "bye")
-        socket = null
+        synchronized(announceLock) {
+            pendingFresh = null
+            socket?.close(1000, "bye")
+            socket = null
+        }
     }
 
     companion object {
@@ -94,6 +145,22 @@ class SaleChannel(
             }
             return "$wsBase/api/mobile-sync/stream?deviceId=$deviceId"
         }
+    }
+}
+
+object ActiveSaleChannel {
+    private val current = AtomicReference<SaleChannel?>(null)
+
+    fun attach(channel: SaleChannel) {
+        current.set(channel)
+    }
+
+    fun detach(channel: SaleChannel) {
+        current.compareAndSet(channel, null)
+    }
+
+    fun announce(ready: Boolean, fresh: Boolean = false) {
+        current.get()?.announcePrinting(ready, fresh)
     }
 }
 

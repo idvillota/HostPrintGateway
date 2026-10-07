@@ -96,8 +96,7 @@ public final class PrintJobDao_Impl implements PrintJobDao {
   }
 
   @Override
-  public Object insertAll(final List<PrintJobEntity> jobs,
-      final Continuation<? super Unit> $completion) {
+  public Object insertAll(final List<PrintJobEntity> jobs, final Continuation<? super Unit> arg1) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -111,11 +110,11 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           __db.endTransaction();
         }
       }
-    }, $completion);
+    }, arg1);
   }
 
   @Override
-  public Object markPrinted(final String id, final Continuation<? super Unit> $completion) {
+  public Object markPrinted(final String id, final Continuation<? super Unit> arg1) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -140,11 +139,11 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           __preparedStmtOfMarkPrinted.release(_stmt);
         }
       }
-    }, $completion);
+    }, arg1);
   }
 
   @Override
-  public Object deleteById(final String id, final Continuation<? super Unit> $completion) {
+  public Object deleteById(final String id, final Continuation<? super Unit> arg1) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -169,11 +168,11 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           __preparedStmtOfDeleteById.release(_stmt);
         }
       }
-    }, $completion);
+    }, arg1);
   }
 
   @Override
-  public Object getPending(final Continuation<? super List<PrintJobEntity>> $completion) {
+  public Object getPending(final Continuation<? super List<PrintJobEntity>> arg0) {
     final String _sql = "SELECT * FROM print_jobs WHERE status = 'PENDING' ORDER BY createdAt ASC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
@@ -233,12 +232,11 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           _statement.release();
         }
       }
-    }, $completion);
+    }, arg0);
   }
 
   @Override
-  public Object getPrintedAwaitingAck(
-      final Continuation<? super List<PrintJobEntity>> $completion) {
+  public Object getPrintedAwaitingAck(final Continuation<? super List<PrintJobEntity>> arg0) {
     final String _sql = "SELECT * FROM print_jobs WHERE status = 'PRINTED' ORDER BY createdAt ASC";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
@@ -298,11 +296,11 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           _statement.release();
         }
       }
-    }, $completion);
+    }, arg0);
   }
 
   @Override
-  public Object count(final Continuation<? super Integer> $completion) {
+  public Object count(final Continuation<? super Integer> arg0) {
     final String _sql = "SELECT COUNT(*) FROM print_jobs";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
     final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
@@ -330,7 +328,7 @@ public final class PrintJobDao_Impl implements PrintJobDao {
           _statement.release();
         }
       }
-    }, $completion);
+    }, arg0);
   }
 
   @NonNull

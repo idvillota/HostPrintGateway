@@ -1,9 +1,5 @@
 [
     {
-        "merged": "C:\\Users\\GABRIEL\\AppData\\Local\\Temp\\cursor-sandbox-cache\\f25ec75d720ef799859905a22d9c12bc\\gradle\\daemon\\8.4\\com.host.printgateway.app-merged_res-43:\\drawable-nodpi_host_logo.png.flat",
-        "source": "C:\\Users\\GABRIEL\\AppData\\Local\\Temp\\cursor-sandbox-cache\\f25ec75d720ef799859905a22d9c12bc\\gradle\\daemon\\8.4\\com.host.printgateway.app-main-45:\\drawable-nodpi\\host_logo.png"
-    },
-    {
         "merged": "com.host.printgateway.app-merged_res-43:/drawable-nodpi_host_logo.png.flat",
         "source": "com.host.printgateway.app-main-45:/drawable-nodpi/host_logo.png"
     }

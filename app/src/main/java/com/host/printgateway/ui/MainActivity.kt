@@ -3,8 +3,11 @@ package com.host.printgateway.ui
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,6 +54,7 @@ class MainActivity : ComponentActivity() {
                         renewSessionTick = tick,
                         onEnsurePermissions = ::ensurePermissions,
                         onStartGateway = {
+                            requestUnrestrictedBattery()
                             ContextCompat.startForegroundService(
                                 this@MainActivity,
                                 Intent(this@MainActivity, PrintGatewayService::class.java),
@@ -96,5 +100,15 @@ class MainActivity : ComponentActivity() {
         if (needed.isNotEmpty()) {
             permissionLauncher.launch(needed.toTypedArray())
         }
+    }
+
+    private fun requestUnrestrictedBattery() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val power = getSystemService(POWER_SERVICE) as PowerManager
+        if (power.isIgnoringBatteryOptimizations(packageName)) return
+        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        runCatching { startActivity(intent) }
     }
 }

@@ -17,6 +17,7 @@ class BluetoothEscPosPrinter(private val macAddress: String) {
     @SuppressLint("MissingPermission")
     suspend fun print(bytes: ByteArray): Result<Unit> = withContext(Dispatchers.IO) {
         var socket: BluetoothSocket? = null
+        var sent = false
         try {
             val adapter = BluetoothAdapter.getDefaultAdapter()
                 ?: return@withContext Result.failure(IllegalStateException("Bluetooth no disponible"))
@@ -30,11 +31,12 @@ class BluetoothEscPosPrinter(private val macAddress: String) {
             socket.outputStream.use { stream ->
                 stream.write(bytes)
                 stream.flush()
+                sent = true
             }
             delay(400)
             Result.success(Unit)
         } catch (e: IOException) {
-            Result.failure(e)
+            if (sent) Result.success(Unit) else Result.failure(e)
         } finally {
             try {
                 socket?.close()
