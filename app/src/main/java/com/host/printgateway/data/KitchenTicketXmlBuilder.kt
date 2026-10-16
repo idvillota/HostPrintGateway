@@ -40,6 +40,7 @@ object KitchenTicketXmlBuilder {
         for (item in lines) {
             serializer.startTag("", "Line")
             writeXmlValue(serializer, "ProductName", item.productName)
+            writeXmlValue(serializer, "ProductTypeId", item.productTypeId)
             writeXmlValue(serializer, "Quantity", formatQuantity(item.quantity))
             writeXmlValue(serializer, "Notes", item.notes)
             serializer.startTag("", "ExcludedIngredients")

@@ -17,9 +17,6 @@ import com.host.printgateway.data.OrderItemEntity
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.RestaurantRepository
 import com.host.printgateway.network.SyncUnauthorized
-import com.host.printgateway.receipt.InvoiceDraft
-import com.host.printgateway.receipt.InvoiceXml
-import com.host.printgateway.receipt.ReceiptLine
 import com.host.printgateway.ui.SessionRenewalNotifier
 import com.host.printgateway.ui.components.AppScaffold
 import com.host.printgateway.ui.navigation.PaymentStep
@@ -35,7 +32,6 @@ fun PaymentHost(
     step: PaymentStep,
     apiUrl: String,
     deviceToken: String,
-    printerMac: String,
     database: PrintGatewayDatabase,
     settings: GatewaySettings,
     onStep: (PaymentStep) -> Unit,
@@ -96,42 +92,16 @@ fun PaymentHost(
             return
         }
         val due = current.foodTotal + tip
-        val split = splitNote(splitMode, equalParts, customParts, due)
-        if (split == null) {
+        if (splitNote(splitMode, equalParts, customParts, due) == null) {
             notice = "Las partes personalizadas deben sumar el total."
             return
         }
         sending = true
-        notice = if (printInvoice) "Imprimiendo factura…" else "Cobrando…"
+        notice = if (printInvoice) "Enviando factura…" else "Cobrando…"
         scope.launch {
-            val printed = if (printInvoice) {
-                val draft = InvoiceDraft(
-                    invoiceNumber = "F${System.currentTimeMillis().toString().takeLast(6)}",
-                    tableCode = current.tableCode,
-                    cashier = current.cashier,
-                    lines = current.lines.map {
-                        ReceiptLine(it.description, it.quantity, it.unitPrice, it.lineTotal)
-                    },
-                    articleCount = current.articleCount,
-                    foodTotal = current.foodTotal,
-                    taxAmount = current.taxAmount,
-                    tip = tip,
-                    paymentMethod = paymentMethod,
-                    splitNote = split,
-                )
-                val xml = InvoiceXml.write(draft)
-                withContext(Dispatchers.IO) { InvoiceXml.print(xml, printerMac) }
-            } else {
-                Result.success(Unit)
-            }
-            if (printed.isFailure) {
-                sending = false
-                notice = printed.exceptionOrNull()?.message ?: "No se pudo imprimir la factura"
-                return@launch
-            }
             val deviceId = DeviceIdProvider.get(context)
             val uploaded = withContext(Dispatchers.IO) {
-                repository.markPaidForSync(current.orderIds, paymentMethod, tip)
+                repository.markPaidForSync(current.orderIds, paymentMethod, tip, printInvoice)
                 when {
                     offlineMode -> Result.success(0)
                     apiUrl.isBlank() || deviceToken.isBlank() ->
@@ -142,10 +112,17 @@ fun PaymentHost(
             reload()
             sending = false
             notice = when {
-                printInvoice && uploaded.isSuccess -> "Factura enviada a la impresora."
-                printInvoice -> "Factura impresa. ${uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."}"
-                uploaded.isSuccess -> "Cobro registrado."
-                else -> uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."
+                !printInvoice && uploaded.isSuccess -> "Cobro registrado."
+                !printInvoice -> uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."
+                uploaded.isSuccess && !offlineMode -> "Cobro registrado. La factura se envió a la impresora."
+                else -> {
+                    val reason = uploaded.exceptionOrNull()?.message
+                    if (reason.isNullOrBlank()) {
+                        "Cobro guardado. La factura se imprimirá cuando HOST reciba el pago."
+                    } else {
+                        "Cobro guardado. $reason La factura se imprimirá cuando HOST reciba el pago."
+                    }
+                }
             }
             onStep(PaymentStep.Accounts)
         }
@@ -188,6 +165,7 @@ fun PaymentHost(
                     customParts = customParts,
                     notice = notice,
                     sending = sending,
+                    breBProfile = settings.breBProfile(),
                     onTipChange = { tipText = it },
                     onTipPercent = { percent ->
                         val food = bill?.foodTotal ?: 0.0

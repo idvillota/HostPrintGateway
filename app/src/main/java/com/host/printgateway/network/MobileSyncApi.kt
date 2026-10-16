@@ -106,6 +106,7 @@ class MobileSyncApi(
         remoteIds: List<String>,
         paymentMethod: String,
         tipAmount: Double,
+        printReceipt: Boolean = false,
     ): Result<BatchOrderResult> = runCatching {
         val ids = JSONArray()
         remoteIds.forEach { ids.put(it) }
@@ -114,6 +115,7 @@ class MobileSyncApi(
             .put("remoteIds", ids)
             .put("paymentMethod", paymentMethod)
             .put("tipAmount", tipAmount)
+            .put("printReceipt", printReceipt)
             .toString()
         val response = request("POST", "/api/mobile-sync/payments", body)
         val root = JSONObject(response)

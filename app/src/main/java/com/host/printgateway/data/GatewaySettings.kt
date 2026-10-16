@@ -2,6 +2,7 @@ package com.host.printgateway.data
 
 import android.content.Context
 import com.host.printgateway.network.BackendAuth
+import com.host.printgateway.payment.BreBProfile
 
 /**
  * Persists gateway configuration (SharedPreferences — minimal, no extra libs).
@@ -42,6 +43,28 @@ class GatewaySettings(context: Context) {
         get() = prefs.getBoolean(KEY_OFFLINE_MODE, false)
         set(value) = prefs.edit().putBoolean(KEY_OFFLINE_MODE, value).apply()
 
+    var logoPath: String
+        get() = prefs.getString(KEY_LOGO, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_LOGO, value).apply()
+
+    fun breBProfile(): BreBProfile = BreBProfile(
+        key = prefs.getString(KEY_BREB_KEY, "").orEmpty(),
+        keyType = prefs.getInt(KEY_BREB_TYPE, 0),
+        merchantName = prefs.getString(KEY_BREB_NAME, "").orEmpty(),
+        city = prefs.getString(KEY_BREB_CITY, "").orEmpty(),
+        postalCode = prefs.getString(KEY_BREB_POSTAL, "").orEmpty(),
+    )
+
+    fun saveBreB(profile: BreBProfile) {
+        prefs.edit()
+            .putString(KEY_BREB_KEY, profile.key.trim())
+            .putInt(KEY_BREB_TYPE, profile.keyType)
+            .putString(KEY_BREB_NAME, profile.merchantName.trim())
+            .putString(KEY_BREB_CITY, profile.city.trim())
+            .putString(KEY_BREB_POSTAL, profile.postalCode.trim())
+            .apply()
+    }
+
     fun isConfigured(): Boolean =
         apiBaseUrl.isNotBlank() && deviceToken.isNotBlank() && printerMac.isNotBlank()
 
@@ -57,6 +80,12 @@ class GatewaySettings(context: Context) {
         private const val KEY_AUTO_SYNC_MS = "auto_sync_interval_ms"
         private const val KEY_SALE_CURSOR = "sale_cursor"
         private const val KEY_OFFLINE_MODE = "offline_mode"
+        private const val KEY_LOGO = "restaurant_logo"
+        private const val KEY_BREB_KEY = "breb_key"
+        private const val KEY_BREB_TYPE = "breb_key_type"
+        private const val KEY_BREB_NAME = "breb_merchant_name"
+        private const val KEY_BREB_CITY = "breb_city"
+        private const val KEY_BREB_POSTAL = "breb_postal"
         const val DEFAULT_API_URL = "http://10.0.2.2:5228"
         const val DEFAULT_POLL_MS = 3_000L
         const val DEFAULT_AUTO_SYNC_MS = 15 * 60 * 1000L

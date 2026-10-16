@@ -16,10 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.host.printgateway.ui.components.AppScaffold
-import com.host.printgateway.ui.components.HostLogo
+import com.host.printgateway.ui.components.BrandMark
 
 @Composable
 fun HomeScreen(
+    logoPath: String,
     onOpenTables: () -> Unit,
     onOpenPayments: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -35,7 +36,8 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            HostLogo(
+            BrandMark(
+                logoPath = logoPath,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 height = 88.dp,
             )

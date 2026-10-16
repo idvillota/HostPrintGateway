@@ -25,6 +25,7 @@ fun AppScaffold(
     title: String,
     onBack: (() -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
+    showGatewayLink: Boolean = true,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -46,6 +47,9 @@ fun AppScaffold(
                         }
                     },
                     actions = {
+                        if (showGatewayLink) {
+                            GatewayStatusChip(GatewayLinkState.status)
+                        }
                         if (onSettings != null) {
                             IconButton(onClick = onSettings, modifier = Modifier.size(48.dp)) {
                                 Icon(

@@ -44,45 +44,80 @@ class SyncRepository(
 
         val paymentOrders = pending.filter { it.syncStatus.startsWith(SyncMarkers.PAYMENT_PREFIX) }
         val lineOrders = pending.filterNot { it.syncStatus.startsWith(SyncMarkers.PAYMENT_PREFIX) }
-        var synced = uploadOrderLines(baseUrl, deviceId, lineOrders, preservePayment = false, errors = errors)
-
-        paymentOrders.groupBy { it.diningTableId ?: it.id }.values.forEach { group ->
-            val errorsBefore = errors.size
-            uploadOrderLines(baseUrl, deviceId, group, preservePayment = true, errors = errors)
-            if (errors.size > errorsBefore) return@forEach
-            val current = group.map { dao.getOrder(it.id) ?: it }
-            val remoteIds = current.mapNotNull { it.remoteId?.takeIf(String::isNotBlank) }
-            if (remoteIds.size != current.size) {
-                errors += "La comanda de la mesa ${group.first().diningTableCode} todavía no está en HOST."
-                return@forEach
-            }
-            val marker = group.first().syncStatus.removePrefix(SyncMarkers.PAYMENT_PREFIX).split("|")
-            val method = marker.dropLast(1).joinToString("|").ifBlank { "Efectivo" }
-            val tip = marker.lastOrNull()?.toDoubleOrNull() ?: 0.0
-            val paid = MobileSyncApi(baseUrl, deviceToken).uploadPayment(
-                deviceId = deviceId,
-                remoteIds = remoteIds,
-                paymentMethod = method,
-                tipAmount = tip,
-            ).getOrThrow()
-            if (paid.synced) {
-                current.forEach { order ->
-                    dao.markOrderSynced(order.id, order.remoteId.orEmpty())
+        val unsettledTables = mutableSetOf<String>()
+        var synced = 0
+        val paymentById = paymentOrders.associateBy { it.id }
+        val charges = PendingSync.chargesByTable(
+            paymentOrders.map { order ->
+                PendingPayment(
+                    orderId = order.id,
+                    tableKey = PendingSync.tableKey(order.diningTableId, order.id),
+                    closedAt = order.closedAtUtc ?: order.createdAt,
+                )
+            },
+        )
+        charges.forEach { (tableKey, tableCharges) ->
+            for (charge in tableCharges) {
+                val group = charge.mapNotNull { paymentById[it.orderId] }
+                val settled = settleOfflinePayment(baseUrl, deviceId, group, errors)
+                synced += settled.synced
+                if (!settled.cleared) {
+                    unsettledTables += tableKey
+                    break
                 }
-                if (paid.tablesAvailable) {
-                    LocalAccountActions.freeSettledTables(dao, current.mapNotNull { it.diningTableId })
-                } else {
-                    errors += "La mesa ${group.first().diningTableCode} sigue ocupada en HOST."
-                }
-                synced += current.size
-            } else {
-                errors += paid.error.ifBlank { "HOST rechazó el cobro." }
             }
         }
+
+        val readyLines = lineOrders.filter {
+            PendingSync.isReadyToUpload(it.diningTableId, it.id, unsettledTables)
+        }
+        if (readyLines.size < lineOrders.size) {
+            errors += "Hay comandas nuevas en espera hasta que HOST cierre el cobro de su mesa."
+        }
+        synced += uploadOrderLines(baseUrl, deviceId, readyLines, preservePayment = false, errors = errors)
 
         healOccupiedTables(baseUrl, deviceId, errors)
         if (errors.isNotEmpty()) error(errors.distinct().joinToString(" "))
         synced
+    }
+
+    private suspend fun settleOfflinePayment(
+        baseUrl: String,
+        deviceId: String,
+        group: List<OrderEntity>,
+        errors: MutableList<String>,
+    ): OfflinePaymentResult {
+        val errorsBefore = errors.size
+        uploadOrderLines(baseUrl, deviceId, group, preservePayment = true, errors = errors)
+        if (errors.size > errorsBefore) return OfflinePaymentResult(synced = 0, cleared = false)
+
+        val current = group.map { dao.getOrder(it.id) ?: it }
+        val remoteIds = current.mapNotNull { it.remoteId?.takeIf(String::isNotBlank) }
+        if (remoteIds.size != current.size) {
+            errors += "La comanda de la mesa ${group.first().diningTableCode} todavía no está en HOST."
+            return OfflinePaymentResult(synced = 0, cleared = false)
+        }
+        val payment = SyncMarkers.parsePayment(group.first().syncStatus)
+        val paid = MobileSyncApi(baseUrl, deviceToken).uploadPayment(
+            deviceId = deviceId,
+            remoteIds = remoteIds,
+            paymentMethod = payment.method,
+            tipAmount = payment.tip,
+            printReceipt = payment.printReceipt,
+        ).getOrThrow()
+        if (!paid.synced) {
+            errors += paid.error.ifBlank { "HOST rechazó el cobro." }
+            return OfflinePaymentResult(synced = 0, cleared = false)
+        }
+        if (!paid.tablesAvailable) {
+            errors += "La mesa ${group.first().diningTableCode} sigue ocupada en HOST."
+            return OfflinePaymentResult(synced = 0, cleared = false)
+        }
+        current.forEach { order ->
+            dao.markOrderSynced(order.id, order.remoteId.orEmpty())
+        }
+        LocalAccountActions.freeSettledTables(dao, current.mapNotNull { it.diningTableId })
+        return OfflinePaymentResult(synced = current.size, cleared = true)
     }
 
     private suspend fun healOccupiedTables(
@@ -266,3 +301,5 @@ class SyncRepository(
         dao.updateOrderTotals(orderId, total, total)
     }
 }
+
+private data class OfflinePaymentResult(val synced: Int, val cleared: Boolean)

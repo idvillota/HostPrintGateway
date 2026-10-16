@@ -4,7 +4,8 @@ import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderDraftLine
 import com.host.printgateway.data.RestaurantDao
 import com.host.printgateway.data.RestaurantRepository
-import com.host.printgateway.printer.PrintPipeline
+import com.host.printgateway.printer.ConfiguredPrint
+import com.host.printgateway.printer.CopyResult
 
 sealed interface SubmitOutcome {
     data class Printed(val orderId: String) : SubmitOutcome
@@ -33,7 +34,7 @@ class SubmitComanda(
             )
             val ticket = dao.getTicketForOrder(orderId)
                 ?: return SubmitOutcome.Failed("No se generó el XML de la comanda")
-            if (printerMac.isBlank()) {
+            if (printerMac.isBlank() && dao.getLocalPrinters().none { it.mac.isNotBlank() }) {
                 return SubmitOutcome.NeedsRetry(
                     orderId,
                     "Indica la MAC de la impresora en Configuración.",
@@ -50,14 +51,20 @@ class SubmitComanda(
                     SubmitOutcome.NeedsRetry(orderId, "La comanda ya se está imprimiendo.")
                 }
             }
-            val printed = PrintPipeline.printKitchenTicketXml(ticket.payload, printerMac)
-            if (printed.isFailure) {
-                val reason = printed.exceptionOrNull()?.message ?: "No se pudo imprimir"
-                dao.markTicketFailed(ticket.id, reason)
-                return SubmitOutcome.NeedsRetry(orderId, reason)
+            when (val printed = ConfiguredPrint.printKitchen(dao, printerMac, ticket.payload)) {
+                CopyResult.Printed -> {
+                    dao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                    SubmitOutcome.Printed(orderId)
+                }
+                is CopyResult.Invalid -> {
+                    dao.markTicketFailed(ticket.id, printed.message)
+                    SubmitOutcome.NeedsRetry(orderId, printed.message)
+                }
+                is CopyResult.Failed -> {
+                    dao.markTicketFailed(ticket.id, printed.message)
+                    SubmitOutcome.NeedsRetry(orderId, printed.message)
+                }
             }
-            dao.markTicketPrinted(ticket.id, System.currentTimeMillis())
-            SubmitOutcome.Printed(orderId)
         } catch (error: Exception) {
             SubmitOutcome.Failed(error.message ?: "No se pudo crear la orden")
         }

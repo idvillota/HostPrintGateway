@@ -1,5 +1,6 @@
 package com.host.printgateway.printer
 
+import android.graphics.Bitmap
 import android.util.Base64
 import com.host.printgateway.network.PrintJobDto
 import com.host.printgateway.receipt.SalesReceiptXmlParser
@@ -12,10 +13,10 @@ class PrintJobRenderer(
     private val formatter: EscPosReceiptFormatter = EscPosReceiptFormatter(),
 ) {
 
-    fun toEscPos(job: PrintJobDto): ByteArray {
+    fun toEscPos(job: PrintJobDto, logo: Bitmap? = null): ByteArray {
         return when (job.payloadFormat.lowercase()) {
             FORMAT_ESCPOS_V1 -> Base64.decode(job.payload, Base64.DEFAULT)
-            FORMAT_SALES_RECEIPT_XML -> formatter.format(SalesReceiptXmlParser.parse(job.payload))
+            FORMAT_SALES_RECEIPT_XML -> formatter.format(SalesReceiptXmlParser.parse(job.payload), logo)
             FORMAT_KITCHEN_TICKET_XML -> KitchenTicketFormatter().format(job.payload)
             else -> error("Formato no soportado: ${job.payloadFormat}")
         }

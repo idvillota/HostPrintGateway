@@ -303,6 +303,7 @@ fun ServiceHost(
                                     quantity = line.quantity.toDouble(),
                                     unitPrice = line.product.unitPrice,
                                     notes = line.notes,
+                                    productTypeId = line.product.productTypeId,
                                 )
                             }
                             val outcome = withContext(Dispatchers.IO) {

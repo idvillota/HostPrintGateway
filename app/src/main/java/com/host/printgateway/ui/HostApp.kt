@@ -8,7 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,7 +39,10 @@ import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.network.ActiveSaleChannel
 import com.host.printgateway.network.AuthManager
 import com.host.printgateway.network.JwtExpiry
+import com.host.printgateway.network.PrintSession
+import com.host.printgateway.network.SaleChannel
 import com.host.printgateway.service.IncomingPrint
+import com.host.printgateway.ui.components.GatewayLinkState
 import com.host.printgateway.ui.home.HomeScreen
 import com.host.printgateway.ui.login.LoginScreen
 import com.host.printgateway.ui.navigation.AppRoute
@@ -76,6 +85,7 @@ fun HostApp(
     var settingsReturn by remember { mutableStateOf<AppRoute>(AppRoute.Login) }
     var apiUrl by remember { mutableStateOf(settings.apiBaseUrl) }
     var printerMac by remember { mutableStateOf(settings.printerMac) }
+    var logoPath by remember { mutableStateOf(settings.logoPath) }
     var email by remember { mutableStateOf(savedCredentials?.email.orEmpty()) }
     var password by remember { mutableStateOf(savedCredentials?.password.orEmpty()) }
     var tenantSlug by remember { mutableStateOf(savedCredentials?.tenantSlug.orEmpty()) }
@@ -85,6 +95,8 @@ fun HostApp(
     var autoSyncEnabled by remember { mutableStateOf(settings.autoSyncEnabled) }
     var offlineMode by remember { mutableStateOf(settings.offlineMode) }
     var offlineNotice by remember { mutableStateOf(OfflineNotice.None) }
+    var offerSnoozeUntil by remember { mutableLongStateOf(0L) }
+    var resumeSnoozeUntil by remember { mutableLongStateOf(0L) }
     var offlineDetail by remember { mutableStateOf("") }
     var offlineSyncing by remember { mutableStateOf(false) }
     var confirmExit by remember { mutableStateOf(false) }
@@ -203,6 +215,8 @@ fun HostApp(
         deviceId = deviceId(),
         scope = scope,
         offlineNotice = offlineNotice,
+        offerSnoozeUntil = offerSnoozeUntil,
+        resumeSnoozeUntil = resumeSnoozeUntil,
         onOfflineNoticeChange = { offlineNotice = it },
         onCatalogRevisionBump = { catalogRevision++ },
         onUnauthorized = { SessionRenewalNotifier.show(context) },
@@ -227,6 +241,7 @@ fun HostApp(
     Box(modifier = Modifier.fillMaxSize()) {
         when (val current = route) {
             AppRoute.Login -> LoginScreen(
+                logoPath = logoPath,
                 email = email,
                 password = password,
                 tenantSlug = tenantSlug,
@@ -267,11 +282,17 @@ fun HostApp(
             AppRoute.Settings -> SettingsScreen(
                 apiUrl = apiUrl,
                 printerMac = printerMac,
+                logoPath = logoPath,
                 signedIn = token.isNotBlank(),
                 status = settingsStatus,
                 database = database,
+                settings = settings,
                 onApiUrlChange = { apiUrl = it },
                 onPrinterMacChange = { printerMac = it },
+                onLogoChange = { path ->
+                    settings.logoPath = path
+                    logoPath = path
+                },
                 onBack = {
                     persistConnection()
                     route = settingsReturn
@@ -282,17 +303,22 @@ fun HostApp(
                         token.isBlank() -> settingsStatus = "Primero inicia sesión."
                         printerMac.isBlank() -> settingsStatus = "Indica la MAC de la impresora."
                         else -> {
+                            val since = SaleChannel.utcNowIso()
+                            PrintSession.arm(since)
                             onEnsurePermissions()
                             IncomingPrint.accept()
+                            GatewayLinkState.start()
                             onStartGateway()
-                            ActiveSaleChannel.announce(ready = true, fresh = true)
-                            settingsStatus = "Gateway iniciado. Se imprimen las comandas nuevas."
+                            ActiveSaleChannel.announce(ready = true, fresh = true, since = since)
+                            settingsStatus = "Gateway iniciado. Espera a que el indicador diga Listo."
                         }
                     }
                 },
                 onStopGateway = {
-                    ActiveSaleChannel.announce(ready = false)
                     IncomingPrint.stop()
+                    PrintSession.clear()
+                    GatewayLinkState.stop()
+                    ActiveSaleChannel.announce(ready = false)
                     onStopGateway()
                     settingsStatus = "Gateway detenido"
                 },
@@ -322,6 +348,7 @@ fun HostApp(
             )
 
             AppRoute.Home -> HomeScreen(
+                logoPath = logoPath,
                 onOpenTables = { route = AppRoute.Ordering(OrderingStep.Tables) },
                 onOpenPayments = { route = AppRoute.Paying(PaymentStep.Accounts) },
                 onOpenSettings = ::openSettings,
@@ -331,7 +358,6 @@ fun HostApp(
                 step = current.step,
                 apiUrl = apiUrl,
                 deviceToken = token,
-                printerMac = printerMac,
                 database = database,
                 settings = settings,
                 onStep = { route = AppRoute.Paying(it) },
@@ -384,6 +410,16 @@ fun HostApp(
                 detail = offlineDetail,
                 onActivate = ::activateOfflineMode,
                 onResume = ::leaveOfflineMode,
+                onDismiss = {
+                    val closed = offlineNotice
+                    offlineNotice = OfflineNotice.None
+                    val until = System.currentTimeMillis() + HostSyncTiming.OFFLINE_OFFER_SNOOZE_MS
+                    if (closed == OfflineNotice.Offer) {
+                        offerSnoozeUntil = until
+                    } else {
+                        resumeSnoozeUntil = until
+                    }
+                },
             )
         }
     }
@@ -397,7 +433,9 @@ private fun OfflineModeBanner(
     detail: String,
     onActivate: () -> Unit,
     onResume: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
+    val canDismiss = true
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -408,15 +446,21 @@ private fun OfflineModeBanner(
         color = MaterialTheme.colorScheme.primaryContainer,
         shadowElevation = 6.dp,
     ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(
+                start = 16.dp,
+                top = 16.dp,
+                end = if (canDismiss) 40.dp else 16.dp,
+                bottom = 16.dp,
+            ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = if (notice == OfflineNotice.Offer) {
                     "Problema con la conexión. Puedes activar el modo sin internet."
                 } else {
-                    "HOST volvió. Desactiva el modo para enviar lo guardado y traer las mesas."
+                    "Volvió la conexión. Desactiva el modo para enviar lo guardado y traer las mesas."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -442,6 +486,20 @@ private fun OfflineModeBanner(
                         "Desactivar y sincronizar"
                     },
                 )
+            }
+        }
+            if (canDismiss) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .size(40.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Cerrar",
+                    )
+                }
             }
         }
     }

@@ -8,6 +8,9 @@ object HostSyncTiming {
     /** Offer offline mode after consecutive unreachable pings. */
     const val OFFLINE_AFTER_MS = 20_000L
 
+    /** How long the connection alert stays hidden after the user closes it. */
+    const val OFFLINE_OFFER_SNOOZE_MS = 15 * 60 * 1000L
+
     /** Connectivity check interval ([CatalogApi.ping] → GET /health). */
     const val REACH_POLL_MS = 5_000L
 

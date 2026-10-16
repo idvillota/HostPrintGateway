@@ -24,8 +24,12 @@ class RestaurantRepository(
         lines: List<OrderDraftLine>,
     ): String = orders.createOrder(table, waiterName, deviceId, lines)
 
-    suspend fun markPaidForSync(orderIds: List<String>, paymentMethod: String, tip: Double) =
-        orders.markPaidForSync(orderIds, paymentMethod, tip)
+    suspend fun markPaidForSync(
+        orderIds: List<String>,
+        paymentMethod: String,
+        tip: Double,
+        printReceipt: Boolean = false,
+    ) = orders.markPaidForSync(orderIds, paymentMethod, tip, printReceipt)
 
     suspend fun closeOrdersOnFreeHostTables() =
         sync.closeOrdersOnFreeHostTables()

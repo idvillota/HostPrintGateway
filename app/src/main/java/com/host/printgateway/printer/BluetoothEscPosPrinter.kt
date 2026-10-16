@@ -28,20 +28,32 @@ class BluetoothEscPosPrinter(private val macAddress: String) {
 
             socket = device.createRfcommSocketToServiceRecord(sppUuid)
             socket.connect()
-            socket.outputStream.use { stream ->
-                stream.write(bytes)
-                stream.flush()
-                sent = true
-            }
-            delay(400)
-            Result.success(Unit)
+            val stream = socket.outputStream
+            stream.write(bytes)
+            stream.flush()
+            sent = true
+            delay(DRAIN_BEFORE_CLOSE_MS)
         } catch (e: IOException) {
-            if (sent) Result.success(Unit) else Result.failure(e)
+            if (!sent) return@withContext Result.failure(e)
         } finally {
-            try {
-                socket?.close()
-            } catch (_: IOException) {
-            }
+            closeQuietly(socket)
         }
+        delay(SETTLE_BEFORE_NEXT_MS)
+        Result.success(Unit)
+    }
+
+    private fun closeQuietly(socket: BluetoothSocket?) {
+        try {
+            socket?.close()
+        } catch (_: IOException) {
+        }
+    }
+
+    private companion object {
+        /** Keep the radio up until the printer has taken the bytes. */
+        const val DRAIN_BEFORE_CLOSE_MS = 400L
+
+        /** Let the printer finish before the next ticket opens Bluetooth. */
+        const val SETTLE_BEFORE_NEXT_MS = 400L
     }
 }

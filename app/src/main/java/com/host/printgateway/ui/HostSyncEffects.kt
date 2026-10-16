@@ -11,10 +11,12 @@ import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.RestaurantRepository
 import com.host.printgateway.network.ActiveSaleChannel
 import com.host.printgateway.network.CatalogApi
+import com.host.printgateway.network.PrintSession
 import com.host.printgateway.network.SaleChannel
 import com.host.printgateway.network.SaleListenEnd
 import com.host.printgateway.network.SyncUnauthorized
 import com.host.printgateway.service.IncomingPrint
+import com.host.printgateway.ui.components.GatewayLinkState
 import com.host.printgateway.ui.order.OrderSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,11 +45,15 @@ fun HostSyncEffects(
     deviceId: String,
     scope: CoroutineScope,
     offlineNotice: OfflineNotice,
+    offerSnoozeUntil: Long,
+    resumeSnoozeUntil: Long,
     onOfflineNoticeChange: (OfflineNotice) -> Unit,
     onCatalogRevisionBump: () -> Unit,
     onUnauthorized: () -> Unit,
 ) {
     val offlineNoticeNow = rememberUpdatedState(offlineNotice)
+    val offerSnoozeUntilNow = rememberUpdatedState(offerSnoozeUntil)
+    val resumeSnoozeUntilNow = rememberUpdatedState(resumeSnoozeUntil)
     DisposableEffect(Unit) {
         IncomingPrint.onReplay = { ActiveSaleChannel.announce(ready = true, fresh = false) }
         onDispose { IncomingPrint.onReplay = null }
@@ -76,11 +82,17 @@ fun HostSyncEffects(
                 ping.isSuccess -> {
                     lastReachableAt = now
                     onOfflineNoticeChange(
-                        if (offlineMode) OfflineNotice.Resume else OfflineNotice.None,
+                        when {
+                            !offlineMode -> OfflineNotice.None
+                            now < resumeSnoozeUntilNow.value -> OfflineNotice.None
+                            else -> OfflineNotice.Resume
+                        },
                     )
                 }
                 !offlineMode && now - lastReachableAt >= HostSyncTiming.OFFLINE_AFTER_MS -> {
-                    onOfflineNoticeChange(OfflineNotice.Offer)
+                    if (now >= offerSnoozeUntilNow.value) {
+                        onOfflineNoticeChange(OfflineNotice.Offer)
+                    }
                 }
                 offlineMode && offlineNoticeNow.value == OfflineNotice.Resume -> {
                     onOfflineNoticeChange(OfflineNotice.None)
@@ -149,6 +161,11 @@ fun HostSyncEffects(
             val end = try {
                 channel.listen(
                     onPrint = { job -> IncomingPrint.offer(job) },
+                    onPrintQueueReady = {
+                        scope.launch {
+                            if (IncomingPrint.accepting) GatewayLinkState.markReady()
+                        }
+                    },
                     onSale = { sale ->
                         scope.launch {
                             withContext(Dispatchers.IO) {
@@ -170,7 +187,12 @@ fun HostSyncEffects(
                     },
                     onConnected = {
                         if (IncomingPrint.accepting) {
-                            channel.announcePrinting(ready = true, fresh = false)
+                            val since = PrintSession.sinceIso
+                            if (!since.isNullOrBlank() && !PrintSession.freshSent) {
+                                channel.announcePrinting(ready = true, fresh = true, since = since)
+                            } else {
+                                channel.announcePrinting(ready = true, fresh = false)
+                            }
                         }
                         scope.launch {
                             val unauthorized = withContext(Dispatchers.IO) {
@@ -194,6 +216,7 @@ fun HostSyncEffects(
                 ActiveSaleChannel.detach(channel)
                 channel.close()
             }
+            if (IncomingPrint.accepting) GatewayLinkState.markConnecting()
             if (end == SaleListenEnd.Unauthorized) {
                 onUnauthorized()
                 break

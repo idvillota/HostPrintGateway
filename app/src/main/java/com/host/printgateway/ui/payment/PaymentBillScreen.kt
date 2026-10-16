@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.payment.BreBProfile
 import com.host.printgateway.ui.order.formatPrice
 
 private val paymentMethods = listOf("Efectivo", "Tarjeta", "Transferencia")
@@ -39,6 +40,7 @@ fun PaymentBillScreen(
     customParts: List<String>,
     notice: String,
     sending: Boolean,
+    breBProfile: BreBProfile,
     onTipChange: (String) -> Unit,
     onTipPercent: (Int) -> Unit,
     onPaymentMethod: (String) -> Unit,
@@ -140,6 +142,15 @@ fun PaymentBillScreen(
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary,
         )
+        if (paymentMethod == "Transferencia") {
+            BreBQrList(
+                due = due,
+                splitMode = splitMode,
+                equalParts = equalParts,
+                customParts = customParts,
+                profile = breBProfile,
+            )
+        }
         if (notice.isNotBlank()) {
             Text(text = notice, color = MaterialTheme.colorScheme.primary)
         }

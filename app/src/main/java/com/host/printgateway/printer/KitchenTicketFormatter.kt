@@ -6,7 +6,10 @@ import java.util.Locale
 
 class KitchenTicketFormatter {
 
-    fun format(payload: String): ByteArray {
+    fun categoryIds(payload: String): List<String> =
+        parseXml(payload).lines.map { it.productTypeId }
+
+    fun format(payload: String, lineIndexes: Set<Int>? = null): ByteArray {
 
         val ticket = parseXml(payload)
 
@@ -98,7 +101,8 @@ class KitchenTicketFormatter {
             text("------------------------------\n")
         )
 
-        for (line in ticket.lines) {
+        for ((index, line) in ticket.lines.withIndex()) {
+            if (lineIndexes != null && index !in lineIndexes) continue
 
             output.addAll(
                 text(
@@ -291,6 +295,11 @@ class KitchenTicketFormatter {
                                 parser.nextText()
                         }
 
+                        "ProductTypeId" -> {
+                            currentLine?.productTypeId =
+                                parser.nextText()
+                        }
+
                         "Quantity" -> {
                             currentLine?.quantity =
                                 parser.nextText()
@@ -339,6 +348,8 @@ class KitchenTicketFormatter {
                                     KitchenTicketLine(
                                         productName =
                                             line.productName,
+                                        productTypeId =
+                                            line.productTypeId,
                                         quantity =
                                             line.quantity,
                                         notes =
@@ -425,6 +436,7 @@ class KitchenTicketFormatter {
 
     private data class KitchenTicketLine(
         val productName: String,
+        val productTypeId: String,
         val quantity: Double,
         val notes: String,
         val excludedIngredients: List<String>,
@@ -432,6 +444,7 @@ class KitchenTicketFormatter {
 
     private class MutableKitchenTicketLine(
         var productName: String = "",
+        var productTypeId: String = "",
         var quantity: Double = 0.0,
         var notes: String = "",
     )

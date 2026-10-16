@@ -96,5 +96,6 @@ class PrintPipelineTest {
         assertTrue(bytes.isNotEmpty())
         assertTrue(text.contains("FACTURA"))
         assertTrue(text.contains("Host"))
+        assertTrue(text.contains("Diseñado por HOST"))
     }
 }

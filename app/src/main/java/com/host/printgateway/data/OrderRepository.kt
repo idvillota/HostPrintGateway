@@ -10,6 +10,7 @@ data class OrderDraftLine(
     val unitPrice: Double,
     val notes: String = "",
     val excludedIngredients: List<String> = emptyList(),
+    val productTypeId: String = "",
 )
 
 class OrderRepository(
@@ -86,9 +87,13 @@ class OrderRepository(
         return orderId
     }
 
-    suspend fun markPaidForSync(orderIds: List<String>, paymentMethod: String, tip: Double) {
-        val method = paymentMethod.replace("|", " ").ifBlank { "Efectivo" }
-        val marker = SyncMarkers.PAYMENT_PREFIX + method + "|" + String.format(Locale.US, "%.2f", tip)
+    suspend fun markPaidForSync(
+        orderIds: List<String>,
+        paymentMethod: String,
+        tip: Double,
+        printReceipt: Boolean = false,
+    ) {
+        val marker = SyncMarkers.paymentMarker(paymentMethod, tip, printReceipt)
         val tableIds = orderIds.mapNotNull { dao.getOrder(it)?.diningTableId }
         dao.markOrdersPaid(orderIds, System.currentTimeMillis(), marker)
         LocalAccountActions.freeSettledTables(dao, tableIds)

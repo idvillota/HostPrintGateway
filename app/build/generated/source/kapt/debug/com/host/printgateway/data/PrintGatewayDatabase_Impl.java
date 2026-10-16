@@ -33,7 +33,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(4) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(5) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `print_jobs` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `payloadFormat` TEXT NOT NULL, `payload` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))");
@@ -49,8 +49,10 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `orders` (`id` TEXT NOT NULL, `diningTableId` TEXT, `diningTableCode` TEXT NOT NULL, `number` TEXT NOT NULL, `customerId` TEXT, `waiterName` TEXT NOT NULL, `deviceId` TEXT NOT NULL, `status` TEXT NOT NULL, `openedAtUtc` INTEGER NOT NULL, `subtotal` REAL NOT NULL, `taxAmount` REAL NOT NULL, `total` REAL NOT NULL, `createdAt` INTEGER NOT NULL, `remoteId` TEXT, `closedAtUtc` INTEGER, `syncStatus` TEXT NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `order_items` (`id` TEXT NOT NULL, `orderId` TEXT NOT NULL, `productId` TEXT NOT NULL, `productName` TEXT NOT NULL, `quantity` REAL NOT NULL, `unitPrice` REAL NOT NULL, `lineTotal` REAL NOT NULL, `unitCostPrice` REAL, `notes` TEXT NOT NULL, `sentToKitchenAtUtc` INTEGER, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS `kitchen_tickets` (`id` TEXT NOT NULL, `orderId` TEXT NOT NULL, `printerStationId` TEXT, `payload` TEXT NOT NULL, `status` TEXT NOT NULL, `isPrinted` INTEGER NOT NULL, `attempts` INTEGER NOT NULL, `lastError` TEXT, `createdAt` INTEGER NOT NULL, `printedAt` INTEGER, PRIMARY KEY(`id`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `local_printers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `mac` TEXT NOT NULL, `printsInvoices` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, PRIMARY KEY(`id`))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `local_printer_categories` (`id` TEXT NOT NULL, `printerId` TEXT NOT NULL, `productTypeId` TEXT NOT NULL, PRIMARY KEY(`id`))");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4318cf788fde23ce86975737d51ff0e1')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a1ab3e2bc1dcd73b92d90d24d2b26515')");
       }
 
       @Override
@@ -68,6 +70,8 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
         db.execSQL("DROP TABLE IF EXISTS `orders`");
         db.execSQL("DROP TABLE IF EXISTS `order_items`");
         db.execSQL("DROP TABLE IF EXISTS `kitchen_tickets`");
+        db.execSQL("DROP TABLE IF EXISTS `local_printers`");
+        db.execSQL("DROP TABLE IF EXISTS `local_printer_categories`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -336,9 +340,37 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
                   + " Expected:\n" + _infoKitchenTickets + "\n"
                   + " Found:\n" + _existingKitchenTickets);
         }
+        final HashMap<String, TableInfo.Column> _columnsLocalPrinters = new HashMap<String, TableInfo.Column>(5);
+        _columnsLocalPrinters.put("id", new TableInfo.Column("id", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinters.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinters.put("mac", new TableInfo.Column("mac", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinters.put("printsInvoices", new TableInfo.Column("printsInvoices", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinters.put("sortOrder", new TableInfo.Column("sortOrder", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysLocalPrinters = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesLocalPrinters = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoLocalPrinters = new TableInfo("local_printers", _columnsLocalPrinters, _foreignKeysLocalPrinters, _indicesLocalPrinters);
+        final TableInfo _existingLocalPrinters = TableInfo.read(db, "local_printers");
+        if (!_infoLocalPrinters.equals(_existingLocalPrinters)) {
+          return new RoomOpenHelper.ValidationResult(false, "local_printers(com.host.printgateway.data.LocalPrinterEntity).\n"
+                  + " Expected:\n" + _infoLocalPrinters + "\n"
+                  + " Found:\n" + _existingLocalPrinters);
+        }
+        final HashMap<String, TableInfo.Column> _columnsLocalPrinterCategories = new HashMap<String, TableInfo.Column>(3);
+        _columnsLocalPrinterCategories.put("id", new TableInfo.Column("id", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinterCategories.put("printerId", new TableInfo.Column("printerId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsLocalPrinterCategories.put("productTypeId", new TableInfo.Column("productTypeId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysLocalPrinterCategories = new HashSet<TableInfo.ForeignKey>(0);
+        final HashSet<TableInfo.Index> _indicesLocalPrinterCategories = new HashSet<TableInfo.Index>(0);
+        final TableInfo _infoLocalPrinterCategories = new TableInfo("local_printer_categories", _columnsLocalPrinterCategories, _foreignKeysLocalPrinterCategories, _indicesLocalPrinterCategories);
+        final TableInfo _existingLocalPrinterCategories = TableInfo.read(db, "local_printer_categories");
+        if (!_infoLocalPrinterCategories.equals(_existingLocalPrinterCategories)) {
+          return new RoomOpenHelper.ValidationResult(false, "local_printer_categories(com.host.printgateway.data.LocalPrinterCategoryEntity).\n"
+                  + " Expected:\n" + _infoLocalPrinterCategories + "\n"
+                  + " Found:\n" + _existingLocalPrinterCategories);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "4318cf788fde23ce86975737d51ff0e1", "ee232db2d68b5d69f2f24b0fb8fa60fa");
+    }, "a1ab3e2bc1dcd73b92d90d24d2b26515", "52379611ef7b9442f0138d95f347a9ab");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -349,7 +381,7 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "print_jobs","dining_tables","product_types","products","ingredients","ingredient_categories","product_ingredients","product_bundle_lines","printer_stations","product_type_printer_mappings","orders","order_items","kitchen_tickets");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "print_jobs","dining_tables","product_types","products","ingredients","ingredient_categories","product_ingredients","product_bundle_lines","printer_stations","product_type_printer_mappings","orders","order_items","kitchen_tickets","local_printers","local_printer_categories");
   }
 
   @Override
@@ -371,6 +403,8 @@ public final class PrintGatewayDatabase_Impl extends PrintGatewayDatabase {
       _db.execSQL("DELETE FROM `orders`");
       _db.execSQL("DELETE FROM `order_items`");
       _db.execSQL("DELETE FROM `kitchen_tickets`");
+      _db.execSQL("DELETE FROM `local_printers`");
+      _db.execSQL("DELETE FROM `local_printer_categories`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();

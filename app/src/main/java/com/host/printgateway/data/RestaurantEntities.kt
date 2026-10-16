@@ -88,6 +88,22 @@ data class PrinterStationEntity(
     val sortOrder: Int,
 )
 
+@Entity(tableName = "local_printers")
+data class LocalPrinterEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val mac: String,
+    val printsInvoices: Boolean,
+    val sortOrder: Int,
+)
+
+@Entity(tableName = "local_printer_categories")
+data class LocalPrinterCategoryEntity(
+    @PrimaryKey val id: String,
+    val printerId: String,
+    val productTypeId: String,
+)
+
 @Entity(tableName = "product_type_printer_mappings")
 data class ProductTypePrinterMappingEntity(
     @PrimaryKey val id: String,

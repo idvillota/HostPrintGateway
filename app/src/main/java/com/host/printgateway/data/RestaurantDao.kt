@@ -39,6 +39,41 @@ abstract class RestaurantDao {
     @Query("SELECT * FROM printer_stations WHERE isActive = 1 ORDER BY name")
     abstract suspend fun getPrinters(): List<PrinterStationEntity>
 
+    @Query("SELECT * FROM local_printers ORDER BY sortOrder, name")
+    abstract suspend fun getLocalPrinters(): List<LocalPrinterEntity>
+
+    @Query("SELECT * FROM local_printer_categories")
+    abstract suspend fun getLocalPrinterCategories(): List<LocalPrinterCategoryEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertLocalPrinter(printer: LocalPrinterEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertLocalPrinterCategories(items: List<LocalPrinterCategoryEntity>)
+
+    @Query("DELETE FROM local_printer_categories WHERE printerId = :printerId")
+    abstract suspend fun deleteLocalPrinterCategories(printerId: String)
+
+    @Query("DELETE FROM local_printers WHERE id = :printerId")
+    abstract suspend fun deleteLocalPrinter(printerId: String)
+
+    @Transaction
+    open suspend fun saveLocalPrinter(printer: LocalPrinterEntity, categoryIds: List<String>) {
+        upsertLocalPrinter(printer)
+        deleteLocalPrinterCategories(printer.id)
+        if (categoryIds.isNotEmpty()) {
+            upsertLocalPrinterCategories(
+                categoryIds.distinct().map { typeId ->
+                    LocalPrinterCategoryEntity(
+                        id = "${printer.id}|$typeId",
+                        printerId = printer.id,
+                        productTypeId = typeId,
+                    )
+                },
+            )
+        }
+    }
+
     @Query("SELECT * FROM kitchen_tickets WHERE orderId = :orderId ORDER BY createdAt DESC LIMIT 1")
     abstract suspend fun getTicketForOrder(orderId: String): KitchenTicketEntity?
 

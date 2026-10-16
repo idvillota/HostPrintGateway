@@ -37,6 +37,10 @@ import kotlin.coroutines.Continuation;
 public final class RestaurantDao_Impl extends RestaurantDao {
   private final RoomDatabase __db;
 
+  private final EntityInsertionAdapter<LocalPrinterEntity> __insertionAdapterOfLocalPrinterEntity;
+
+  private final EntityInsertionAdapter<LocalPrinterCategoryEntity> __insertionAdapterOfLocalPrinterCategoryEntity;
+
   private final EntityInsertionAdapter<DiningTableEntity> __insertionAdapterOfDiningTableEntity;
 
   private final EntityInsertionAdapter<ProductTypeEntity> __insertionAdapterOfProductTypeEntity;
@@ -54,6 +58,10 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   private final EntityInsertionAdapter<OrderItemEntity> __insertionAdapterOfOrderItemEntity;
 
   private final EntityInsertionAdapter<KitchenTicketEntity> __insertionAdapterOfKitchenTicketEntity;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteLocalPrinterCategories;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteLocalPrinter;
 
   private final SharedSQLiteStatement __preparedStmtOfClearTables;
 
@@ -91,6 +99,63 @@ public final class RestaurantDao_Impl extends RestaurantDao {
 
   public RestaurantDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
+    this.__insertionAdapterOfLocalPrinterEntity = new EntityInsertionAdapter<LocalPrinterEntity>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "INSERT OR REPLACE INTO `local_printers` (`id`,`name`,`mac`,`printsInvoices`,`sortOrder`) VALUES (?,?,?,?,?)";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final LocalPrinterEntity entity) {
+        if (entity.getId() == null) {
+          statement.bindNull(1);
+        } else {
+          statement.bindString(1, entity.getId());
+        }
+        if (entity.getName() == null) {
+          statement.bindNull(2);
+        } else {
+          statement.bindString(2, entity.getName());
+        }
+        if (entity.getMac() == null) {
+          statement.bindNull(3);
+        } else {
+          statement.bindString(3, entity.getMac());
+        }
+        final int _tmp = entity.getPrintsInvoices() ? 1 : 0;
+        statement.bindLong(4, _tmp);
+        statement.bindLong(5, entity.getSortOrder());
+      }
+    };
+    this.__insertionAdapterOfLocalPrinterCategoryEntity = new EntityInsertionAdapter<LocalPrinterCategoryEntity>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "INSERT OR REPLACE INTO `local_printer_categories` (`id`,`printerId`,`productTypeId`) VALUES (?,?,?)";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          @NonNull final LocalPrinterCategoryEntity entity) {
+        if (entity.getId() == null) {
+          statement.bindNull(1);
+        } else {
+          statement.bindString(1, entity.getId());
+        }
+        if (entity.getPrinterId() == null) {
+          statement.bindNull(2);
+        } else {
+          statement.bindString(2, entity.getPrinterId());
+        }
+        if (entity.getProductTypeId() == null) {
+          statement.bindNull(3);
+        } else {
+          statement.bindString(3, entity.getProductTypeId());
+        }
+      }
+    };
     this.__insertionAdapterOfDiningTableEntity = new EntityInsertionAdapter<DiningTableEntity>(__db) {
       @Override
       @NonNull
@@ -501,6 +566,22 @@ public final class RestaurantDao_Impl extends RestaurantDao {
         }
       }
     };
+    this.__preparedStmtOfDeleteLocalPrinterCategories = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM local_printer_categories WHERE printerId = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfDeleteLocalPrinter = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM local_printers WHERE id = ?";
+        return _query;
+      }
+    };
     this.__preparedStmtOfClearTables = new SharedSQLiteStatement(__db) {
       @Override
       @NonNull
@@ -637,6 +718,44 @@ public final class RestaurantDao_Impl extends RestaurantDao {
         return _query;
       }
     };
+  }
+
+  @Override
+  public Object upsertLocalPrinter(final LocalPrinterEntity printer,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __insertionAdapterOfLocalPrinterEntity.insert(printer);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object upsertLocalPrinterCategories(final List<LocalPrinterCategoryEntity> items,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        __db.beginTransaction();
+        try {
+          __insertionAdapterOfLocalPrinterCategoryEntity.insert(items);
+          __db.setTransactionSuccessful();
+          return Unit.INSTANCE;
+        } finally {
+          __db.endTransaction();
+        }
+      }
+    }, $completion);
   }
 
   @Override
@@ -810,6 +929,12 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   }
 
   @Override
+  public Object saveLocalPrinter(final LocalPrinterEntity printer, final List<String> categoryIds,
+      final Continuation<? super Unit> $completion) {
+    return RoomDatabaseKt.withTransaction(__db, (__cont) -> RestaurantDao_Impl.super.saveLocalPrinter(printer, categoryIds, __cont), $completion);
+  }
+
+  @Override
   public Object replaceCatalog(final List<DiningTableEntity> tables,
       final List<ProductTypeEntity> types, final List<ProductEntity> products,
       final List<IngredientEntity> ingredients,
@@ -828,6 +953,66 @@ public final class RestaurantDao_Impl extends RestaurantDao {
   public Object saveOrderWithTicket(final OrderEntity order, final List<OrderItemEntity> items,
       final KitchenTicketEntity ticket, final Continuation<? super Unit> $completion) {
     return RoomDatabaseKt.withTransaction(__db, (__cont) -> RestaurantDao_Impl.super.saveOrderWithTicket(order, items, ticket, __cont), $completion);
+  }
+
+  @Override
+  public Object deleteLocalPrinterCategories(final String printerId,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteLocalPrinterCategories.acquire();
+        int _argIndex = 1;
+        if (printerId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, printerId);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteLocalPrinterCategories.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteLocalPrinter(final String printerId,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteLocalPrinter.acquire();
+        int _argIndex = 1;
+        if (printerId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, printerId);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteLocalPrinter.release(_stmt);
+        }
+      }
+    }, $completion);
   }
 
   @Override
@@ -1863,6 +2048,109 @@ public final class RestaurantDao_Impl extends RestaurantDao {
             final int _tmpSortOrder;
             _tmpSortOrder = _cursor.getInt(_cursorIndexOfSortOrder);
             _item = new PrinterStationEntity(_tmpId,_tmpName,_tmpCode,_tmpBluetoothMac,_tmpIsActive,_tmpSortOrder);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getLocalPrinters(final Continuation<? super List<LocalPrinterEntity>> $completion) {
+    final String _sql = "SELECT * FROM local_printers ORDER BY sortOrder, name";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<LocalPrinterEntity>>() {
+      @Override
+      @NonNull
+      public List<LocalPrinterEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
+          final int _cursorIndexOfMac = CursorUtil.getColumnIndexOrThrow(_cursor, "mac");
+          final int _cursorIndexOfPrintsInvoices = CursorUtil.getColumnIndexOrThrow(_cursor, "printsInvoices");
+          final int _cursorIndexOfSortOrder = CursorUtil.getColumnIndexOrThrow(_cursor, "sortOrder");
+          final List<LocalPrinterEntity> _result = new ArrayList<LocalPrinterEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final LocalPrinterEntity _item;
+            final String _tmpId;
+            if (_cursor.isNull(_cursorIndexOfId)) {
+              _tmpId = null;
+            } else {
+              _tmpId = _cursor.getString(_cursorIndexOfId);
+            }
+            final String _tmpName;
+            if (_cursor.isNull(_cursorIndexOfName)) {
+              _tmpName = null;
+            } else {
+              _tmpName = _cursor.getString(_cursorIndexOfName);
+            }
+            final String _tmpMac;
+            if (_cursor.isNull(_cursorIndexOfMac)) {
+              _tmpMac = null;
+            } else {
+              _tmpMac = _cursor.getString(_cursorIndexOfMac);
+            }
+            final boolean _tmpPrintsInvoices;
+            final int _tmp;
+            _tmp = _cursor.getInt(_cursorIndexOfPrintsInvoices);
+            _tmpPrintsInvoices = _tmp != 0;
+            final int _tmpSortOrder;
+            _tmpSortOrder = _cursor.getInt(_cursorIndexOfSortOrder);
+            _item = new LocalPrinterEntity(_tmpId,_tmpName,_tmpMac,_tmpPrintsInvoices,_tmpSortOrder);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getLocalPrinterCategories(
+      final Continuation<? super List<LocalPrinterCategoryEntity>> $completion) {
+    final String _sql = "SELECT * FROM local_printer_categories";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 0);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<LocalPrinterCategoryEntity>>() {
+      @Override
+      @NonNull
+      public List<LocalPrinterCategoryEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfPrinterId = CursorUtil.getColumnIndexOrThrow(_cursor, "printerId");
+          final int _cursorIndexOfProductTypeId = CursorUtil.getColumnIndexOrThrow(_cursor, "productTypeId");
+          final List<LocalPrinterCategoryEntity> _result = new ArrayList<LocalPrinterCategoryEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final LocalPrinterCategoryEntity _item;
+            final String _tmpId;
+            if (_cursor.isNull(_cursorIndexOfId)) {
+              _tmpId = null;
+            } else {
+              _tmpId = _cursor.getString(_cursorIndexOfId);
+            }
+            final String _tmpPrinterId;
+            if (_cursor.isNull(_cursorIndexOfPrinterId)) {
+              _tmpPrinterId = null;
+            } else {
+              _tmpPrinterId = _cursor.getString(_cursorIndexOfPrinterId);
+            }
+            final String _tmpProductTypeId;
+            if (_cursor.isNull(_cursorIndexOfProductTypeId)) {
+              _tmpProductTypeId = null;
+            } else {
+              _tmpProductTypeId = _cursor.getString(_cursorIndexOfProductTypeId);
+            }
+            _item = new LocalPrinterCategoryEntity(_tmpId,_tmpPrinterId,_tmpProductTypeId);
             _result.add(_item);
           }
           return _result;

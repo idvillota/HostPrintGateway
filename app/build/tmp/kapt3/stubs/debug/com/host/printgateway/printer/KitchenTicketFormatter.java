@@ -1,6 +1,6 @@
 package com.host.printgateway.printer;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00002\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010\u0012\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010 \n\u0002\u0010\u0005\n\u0002\b\u0005\u0018\u00002\u00020\u0001:\u0003\u0010\u0011\u0012B\u0005\u00a2\u0006\u0002\u0010\u0002J\u000e\u0010\u0003\u001a\u00020\u00042\u0006\u0010\u0005\u001a\u00020\u0006J\u0010\u0010\u0007\u001a\u00020\u00062\u0006\u0010\b\u001a\u00020\tH\u0002J\u0010\u0010\n\u001a\u00020\u000b2\u0006\u0010\u0005\u001a\u00020\u0006H\u0002J\u0016\u0010\f\u001a\b\u0012\u0004\u0012\u00020\u000e0\r2\u0006\u0010\u000f\u001a\u00020\u0006H\u0002\u00a8\u0006\u0013"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter;", "", "()V", "format", "", "payload", "", "formatQuantity", "quantity", "", "parseXml", "Lcom/host/printgateway/printer/KitchenTicketFormatter$KitchenTicket;", "text", "", "", "value", "KitchenTicket", "KitchenTicketLine", "MutableKitchenTicketLine", "app_debug"})
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000>\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0010 \n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\u0012\n\u0000\n\u0002\u0010\"\n\u0002\u0010\b\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u0005\n\u0002\b\u0005\u0018\u00002\u00020\u0001:\u0003\u0014\u0015\u0016B\u0005\u00a2\u0006\u0002\u0010\u0002J\u0014\u0010\u0003\u001a\b\u0012\u0004\u0012\u00020\u00050\u00042\u0006\u0010\u0006\u001a\u00020\u0005J \u0010\u0007\u001a\u00020\b2\u0006\u0010\u0006\u001a\u00020\u00052\u0010\b\u0002\u0010\t\u001a\n\u0012\u0004\u0012\u00020\u000b\u0018\u00010\nJ\u0010\u0010\f\u001a\u00020\u00052\u0006\u0010\r\u001a\u00020\u000eH\u0002J\u0010\u0010\u000f\u001a\u00020\u00102\u0006\u0010\u0006\u001a\u00020\u0005H\u0002J\u0016\u0010\u0011\u001a\b\u0012\u0004\u0012\u00020\u00120\u00042\u0006\u0010\u0013\u001a\u00020\u0005H\u0002\u00a8\u0006\u0017"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter;", "", "()V", "categoryIds", "", "", "payload", "format", "", "lineIndexes", "", "", "formatQuantity", "quantity", "", "parseXml", "Lcom/host/printgateway/printer/KitchenTicketFormatter$KitchenTicket;", "text", "", "value", "KitchenTicket", "KitchenTicketLine", "MutableKitchenTicketLine", "app_debug"})
 public final class KitchenTicketFormatter {
     
     public KitchenTicketFormatter() {
@@ -8,8 +8,15 @@ public final class KitchenTicketFormatter {
     }
     
     @org.jetbrains.annotations.NotNull()
-    public final byte[] format(@org.jetbrains.annotations.NotNull()
+    public final java.util.List<java.lang.String> categoryIds(@org.jetbrains.annotations.NotNull()
     java.lang.String payload) {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final byte[] format(@org.jetbrains.annotations.NotNull()
+    java.lang.String payload, @org.jetbrains.annotations.Nullable()
+    java.util.Set<java.lang.Integer> lineIndexes) {
         return null;
     }
     
@@ -176,10 +183,12 @@ public final class KitchenTicketFormatter {
         }
     }
     
-    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00000\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000e\n\u0000\n\u0002\u0010\u0006\n\u0002\b\u0002\n\u0002\u0010 \n\u0002\b\u000e\n\u0002\u0010\u000b\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\b\u0082\b\u0018\u00002\u00020\u0001B+\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u0012\u0006\u0010\u0004\u001a\u00020\u0005\u0012\u0006\u0010\u0006\u001a\u00020\u0003\u0012\f\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00030\b\u00a2\u0006\u0002\u0010\tJ\t\u0010\u0011\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\u0012\u001a\u00020\u0005H\u00c6\u0003J\t\u0010\u0013\u001a\u00020\u0003H\u00c6\u0003J\u000f\u0010\u0014\u001a\b\u0012\u0004\u0012\u00020\u00030\bH\u00c6\u0003J7\u0010\u0015\u001a\u00020\u00002\b\b\u0002\u0010\u0002\u001a\u00020\u00032\b\b\u0002\u0010\u0004\u001a\u00020\u00052\b\b\u0002\u0010\u0006\u001a\u00020\u00032\u000e\b\u0002\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00030\bH\u00c6\u0001J\u0013\u0010\u0016\u001a\u00020\u00172\b\u0010\u0018\u001a\u0004\u0018\u00010\u0001H\u00d6\u0003J\t\u0010\u0019\u001a\u00020\u001aH\u00d6\u0001J\t\u0010\u001b\u001a\u00020\u0003H\u00d6\u0001R\u0017\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00030\b\u00a2\u0006\b\n\u0000\u001a\u0004\b\n\u0010\u000bR\u0011\u0010\u0006\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\f\u0010\rR\u0011\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000e\u0010\rR\u0011\u0010\u0004\u001a\u00020\u0005\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000f\u0010\u0010\u00a8\u0006\u001c"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter$KitchenTicketLine;", "", "productName", "", "quantity", "", "notes", "excludedIngredients", "", "(Ljava/lang/String;DLjava/lang/String;Ljava/util/List;)V", "getExcludedIngredients", "()Ljava/util/List;", "getNotes", "()Ljava/lang/String;", "getProductName", "getQuantity", "()D", "component1", "component2", "component3", "component4", "copy", "equals", "", "other", "hashCode", "", "toString", "app_debug"})
+    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00002\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0002\b\u0002\n\u0002\u0010 \n\u0002\b\u0010\n\u0002\u0010\u000b\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\b\u0082\b\u0018\u00002\u00020\u0001B3\u0012\u0006\u0010\u0002\u001a\u00020\u0003\u0012\u0006\u0010\u0004\u001a\u00020\u0003\u0012\u0006\u0010\u0005\u001a\u00020\u0006\u0012\u0006\u0010\u0007\u001a\u00020\u0003\u0012\f\u0010\b\u001a\b\u0012\u0004\u0012\u00020\u00030\t\u00a2\u0006\u0002\u0010\nJ\t\u0010\u0013\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\u0014\u001a\u00020\u0003H\u00c6\u0003J\t\u0010\u0015\u001a\u00020\u0006H\u00c6\u0003J\t\u0010\u0016\u001a\u00020\u0003H\u00c6\u0003J\u000f\u0010\u0017\u001a\b\u0012\u0004\u0012\u00020\u00030\tH\u00c6\u0003JA\u0010\u0018\u001a\u00020\u00002\b\b\u0002\u0010\u0002\u001a\u00020\u00032\b\b\u0002\u0010\u0004\u001a\u00020\u00032\b\b\u0002\u0010\u0005\u001a\u00020\u00062\b\b\u0002\u0010\u0007\u001a\u00020\u00032\u000e\b\u0002\u0010\b\u001a\b\u0012\u0004\u0012\u00020\u00030\tH\u00c6\u0001J\u0013\u0010\u0019\u001a\u00020\u001a2\b\u0010\u001b\u001a\u0004\u0018\u00010\u0001H\u00d6\u0003J\t\u0010\u001c\u001a\u00020\u001dH\u00d6\u0001J\t\u0010\u001e\u001a\u00020\u0003H\u00d6\u0001R\u0017\u0010\b\u001a\b\u0012\u0004\u0012\u00020\u00030\t\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000b\u0010\fR\u0011\u0010\u0007\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\r\u0010\u000eR\u0011\u0010\u0002\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000f\u0010\u000eR\u0011\u0010\u0004\u001a\u00020\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0010\u0010\u000eR\u0011\u0010\u0005\u001a\u00020\u0006\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0011\u0010\u0012\u00a8\u0006\u001f"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter$KitchenTicketLine;", "", "productName", "", "productTypeId", "quantity", "", "notes", "excludedIngredients", "", "(Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;Ljava/util/List;)V", "getExcludedIngredients", "()Ljava/util/List;", "getNotes", "()Ljava/lang/String;", "getProductName", "getProductTypeId", "getQuantity", "()D", "component1", "component2", "component3", "component4", "component5", "copy", "equals", "", "other", "hashCode", "", "toString", "app_debug"})
     static final class KitchenTicketLine {
         @org.jetbrains.annotations.NotNull()
         private final java.lang.String productName = null;
+        @org.jetbrains.annotations.NotNull()
+        private final java.lang.String productTypeId = null;
         private final double quantity = 0.0;
         @org.jetbrains.annotations.NotNull()
         private final java.lang.String notes = null;
@@ -187,7 +196,8 @@ public final class KitchenTicketFormatter {
         private final java.util.List<java.lang.String> excludedIngredients = null;
         
         public KitchenTicketLine(@org.jetbrains.annotations.NotNull()
-        java.lang.String productName, double quantity, @org.jetbrains.annotations.NotNull()
+        java.lang.String productName, @org.jetbrains.annotations.NotNull()
+        java.lang.String productTypeId, double quantity, @org.jetbrains.annotations.NotNull()
         java.lang.String notes, @org.jetbrains.annotations.NotNull()
         java.util.List<java.lang.String> excludedIngredients) {
             super();
@@ -195,6 +205,11 @@ public final class KitchenTicketFormatter {
         
         @org.jetbrains.annotations.NotNull()
         public final java.lang.String getProductName() {
+            return null;
+        }
+        
+        @org.jetbrains.annotations.NotNull()
+        public final java.lang.String getProductTypeId() {
             return null;
         }
         
@@ -217,23 +232,29 @@ public final class KitchenTicketFormatter {
             return null;
         }
         
-        public final double component2() {
+        @org.jetbrains.annotations.NotNull()
+        public final java.lang.String component2() {
+            return null;
+        }
+        
+        public final double component3() {
             return 0.0;
         }
         
         @org.jetbrains.annotations.NotNull()
-        public final java.lang.String component3() {
+        public final java.lang.String component4() {
             return null;
         }
         
         @org.jetbrains.annotations.NotNull()
-        public final java.util.List<java.lang.String> component4() {
+        public final java.util.List<java.lang.String> component5() {
             return null;
         }
         
         @org.jetbrains.annotations.NotNull()
         public final com.host.printgateway.printer.KitchenTicketFormatter.KitchenTicketLine copy(@org.jetbrains.annotations.NotNull()
-        java.lang.String productName, double quantity, @org.jetbrains.annotations.NotNull()
+        java.lang.String productName, @org.jetbrains.annotations.NotNull()
+        java.lang.String productTypeId, double quantity, @org.jetbrains.annotations.NotNull()
         java.lang.String notes, @org.jetbrains.annotations.NotNull()
         java.util.List<java.lang.String> excludedIngredients) {
             return null;
@@ -257,16 +278,19 @@ public final class KitchenTicketFormatter {
         }
     }
     
-    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u0018\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000e\n\u0000\n\u0002\u0010\u0006\n\u0002\b\r\b\u0002\u0018\u00002\u00020\u0001B#\u0012\b\b\u0002\u0010\u0002\u001a\u00020\u0003\u0012\b\b\u0002\u0010\u0004\u001a\u00020\u0005\u0012\b\b\u0002\u0010\u0006\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\u0007R\u001a\u0010\u0006\u001a\u00020\u0003X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\b\u0010\t\"\u0004\b\n\u0010\u000bR\u001a\u0010\u0002\u001a\u00020\u0003X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\f\u0010\t\"\u0004\b\r\u0010\u000bR\u001a\u0010\u0004\u001a\u00020\u0005X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\u000e\u0010\u000f\"\u0004\b\u0010\u0010\u0011\u00a8\u0006\u0012"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter$MutableKitchenTicketLine;", "", "productName", "", "quantity", "", "notes", "(Ljava/lang/String;DLjava/lang/String;)V", "getNotes", "()Ljava/lang/String;", "setNotes", "(Ljava/lang/String;)V", "getProductName", "setProductName", "getQuantity", "()D", "setQuantity", "(D)V", "app_debug"})
+    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u001a\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u0002\n\u0002\u0010\u0006\n\u0002\b\u000f\b\u0002\u0018\u00002\u00020\u0001B-\u0012\b\b\u0002\u0010\u0002\u001a\u00020\u0003\u0012\b\b\u0002\u0010\u0004\u001a\u00020\u0003\u0012\b\b\u0002\u0010\u0005\u001a\u00020\u0006\u0012\b\b\u0002\u0010\u0007\u001a\u00020\u0003\u00a2\u0006\u0002\u0010\bR\u001a\u0010\u0007\u001a\u00020\u0003X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\t\u0010\n\"\u0004\b\u000b\u0010\fR\u001a\u0010\u0002\u001a\u00020\u0003X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\r\u0010\n\"\u0004\b\u000e\u0010\fR\u001a\u0010\u0004\u001a\u00020\u0003X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\u000f\u0010\n\"\u0004\b\u0010\u0010\fR\u001a\u0010\u0005\u001a\u00020\u0006X\u0086\u000e\u00a2\u0006\u000e\n\u0000\u001a\u0004\b\u0011\u0010\u0012\"\u0004\b\u0013\u0010\u0014\u00a8\u0006\u0015"}, d2 = {"Lcom/host/printgateway/printer/KitchenTicketFormatter$MutableKitchenTicketLine;", "", "productName", "", "productTypeId", "quantity", "", "notes", "(Ljava/lang/String;Ljava/lang/String;DLjava/lang/String;)V", "getNotes", "()Ljava/lang/String;", "setNotes", "(Ljava/lang/String;)V", "getProductName", "setProductName", "getProductTypeId", "setProductTypeId", "getQuantity", "()D", "setQuantity", "(D)V", "app_debug"})
     static final class MutableKitchenTicketLine {
         @org.jetbrains.annotations.NotNull()
         private java.lang.String productName;
+        @org.jetbrains.annotations.NotNull()
+        private java.lang.String productTypeId;
         private double quantity;
         @org.jetbrains.annotations.NotNull()
         private java.lang.String notes;
         
         public MutableKitchenTicketLine(@org.jetbrains.annotations.NotNull()
-        java.lang.String productName, double quantity, @org.jetbrains.annotations.NotNull()
+        java.lang.String productName, @org.jetbrains.annotations.NotNull()
+        java.lang.String productTypeId, double quantity, @org.jetbrains.annotations.NotNull()
         java.lang.String notes) {
             super();
         }
@@ -277,6 +301,15 @@ public final class KitchenTicketFormatter {
         }
         
         public final void setProductName(@org.jetbrains.annotations.NotNull()
+        java.lang.String p0) {
+        }
+        
+        @org.jetbrains.annotations.NotNull()
+        public final java.lang.String getProductTypeId() {
+            return null;
+        }
+        
+        public final void setProductTypeId(@org.jetbrains.annotations.NotNull()
         java.lang.String p0) {
         }
         

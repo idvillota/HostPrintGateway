@@ -23,10 +23,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.host.printgateway.ui.components.AppScaffold
-import com.host.printgateway.ui.components.HostLogo
+import com.host.printgateway.ui.components.BrandMark
 
 @Composable
 fun LoginScreen(
+    logoPath: String,
     email: String,
     password: String,
     tenantSlug: String,
@@ -43,7 +44,7 @@ fun LoginScreen(
         password.isNotBlank() &&
         tenantSlug.isNotBlank()
 
-    AppScaffold(title = "Iniciar sesión") { padding ->
+    AppScaffold(title = "Iniciar sesión", showGatewayLink = false) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -54,7 +55,7 @@ fun LoginScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HostLogo(height = 120.dp)
+            BrandMark(logoPath = logoPath, height = 120.dp)
             Text(
                 text = "Entra para tomar pedidos y cobrar las mesas.",
                 style = MaterialTheme.typography.bodyLarge,

@@ -26,11 +26,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.PrintJobEntity
 import com.host.printgateway.ui.order.formatPrice
-import com.host.printgateway.printer.PrintPipeline
 import com.host.printgateway.ui.RoomDebugPanel
 import com.host.printgateway.ui.components.AppScaffold
 import kotlinx.coroutines.Dispatchers
@@ -42,11 +42,14 @@ import java.util.UUID
 fun SettingsScreen(
     apiUrl: String,
     printerMac: String,
+    logoPath: String,
     signedIn: Boolean,
     status: String,
     database: PrintGatewayDatabase,
+    settings: GatewaySettings,
     onApiUrlChange: (String) -> Unit,
     onPrinterMacChange: (String) -> Unit,
+    onLogoChange: (String) -> Unit,
     onBack: () -> Unit,
     onStartGateway: () -> Unit,
     onStopGateway: () -> Unit,
@@ -59,12 +62,24 @@ fun SettingsScreen(
     offlineBusy: Boolean,
     onToggleOffline: () -> Unit,
 ) {
-    BackHandler(onBack = onBack)
-
     val scope = rememberCoroutineScope()
+    var showPrinterMenu by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     var manualXml by remember { mutableStateOf("") }
-    var testingPrinter by remember { mutableStateOf(false) }
+
+    if (showPrinterMenu) {
+        PrinterMenuScreen(
+            database = database,
+            printerMac = printerMac,
+            status = status,
+            onPrinterMacChange = onPrinterMacChange,
+            onStatus = onStatus,
+            onBack = { showPrinterMenu = false },
+        )
+        return
+    }
+
+    BackHandler(onBack = onBack)
 
     AppScaffold(title = "Configuración", onBack = onBack) { padding ->
         Column(
@@ -76,6 +91,18 @@ fun SettingsScreen(
                 .padding(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            SectionTitle("Restaurante")
+            RestaurantLogoSection(
+                logoPath = logoPath,
+                printerMac = printerMac,
+                database = database,
+                onLogoChange = onLogoChange,
+                onStatus = onStatus,
+            )
+
+            SectionTitle("Transferencia Bre-B")
+            BreBSettingsSection(settings)
+
             SectionTitle("Servidor")
             Text(
                 text = "Dirección del sistema Host. Hace falta para iniciar sesión.",
@@ -129,50 +156,17 @@ fun SettingsScreen(
                 )
             }
 
-            SectionTitle("Impresora")
-            Text(
-                text = "La comanda se envía a esta impresora térmica.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            OutlinedTextField(
-                value = printerMac,
-                onValueChange = onPrinterMacChange,
-                label = { Text("MAC Bluetooth") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedButton(
-                onClick = {
-                    if (printerMac.isBlank()) {
-                        onStatus("Indica la MAC de la impresora.")
-                        return@OutlinedButton
-                    }
-                    testingPrinter = true
-                    onStatus("Enviando prueba…")
-                    scope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            PrintPipeline.printTestTicket(printerMac)
-                        }
-                        testingPrinter = false
-                        onStatus(
-                            if (result.isSuccess) {
-                                "Prueba OK"
-                            } else {
-                                "Error: ${result.exceptionOrNull()?.message ?: "error"}"
-                            },
-                        )
-                    }
-                },
-                enabled = !testingPrinter,
+            SectionTitle("Impresoras")
+            Button(
+                onClick = { showPrinterMenu = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(if (testingPrinter) "Enviando prueba…" else "Probar impresora")
+                Text("Menú de impresoras")
             }
 
             SectionTitle("Gateway")
             Text(
-                text = "Déjalo activo cerca de la impresora para recibir trabajos del servidor.",
+                text = "Déjalo activo cerca de las impresoras para recibir trabajos del servidor.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -253,6 +247,44 @@ fun SettingsScreen(
                 }
             }
 
+            if (status.isNotBlank()) {
+                Text(
+                    text = status,
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrinterMenuScreen(
+    database: PrintGatewayDatabase,
+    printerMac: String,
+    status: String,
+    onPrinterMacChange: (String) -> Unit,
+    onStatus: (String) -> Unit,
+    onBack: () -> Unit,
+) {
+    BackHandler(onBack = onBack)
+
+    AppScaffold(title = "Menú de impresoras", onBack = onBack) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PrinterSetupSection(
+                database = database,
+                fallbackMac = printerMac,
+                onMirrorMac = onPrinterMacChange,
+                onStatus = onStatus,
+            )
             if (status.isNotBlank()) {
                 Text(
                     text = status,

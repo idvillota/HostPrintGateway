@@ -1,5 +1,6 @@
 package com.host.printgateway.printer
 
+import android.graphics.Bitmap
 import com.host.printgateway.network.PrintJobDto
 import com.host.printgateway.receipt.SalesReceiptXmlParser
 
@@ -31,8 +32,8 @@ object PrintPipeline {
     fun renderSalesReceiptXml(xml: String): Result<ByteArray> =
         runCatching { receiptFormatter.format(SalesReceiptXmlParser.parse(xml)) }
 
-    fun renderCloudJob(job: PrintJobDto): Result<ByteArray> =
-        runCatching { jobRenderer.toEscPos(job) }
+    fun renderCloudJob(job: PrintJobDto, logo: Bitmap? = null): Result<ByteArray> =
+        runCatching { jobRenderer.toEscPos(job, logo) }
 
     suspend fun printEscPosBytes(bytes: ByteArray, printerMac: String): Result<Unit> {
         val mac = requirePrinterMac(printerMac).getOrElse { return Result.failure(it) }

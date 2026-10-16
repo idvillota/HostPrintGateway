@@ -4,6 +4,8 @@ package com.host.printgateway.service
 
 import android.annotation.SuppressLint
 import android.app.Notification
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -19,6 +21,9 @@ import com.host.printgateway.data.RestaurantStatuses
 import com.host.printgateway.network.PrintJobAckRequest
 import com.host.printgateway.network.PrintJobApi
 import com.host.printgateway.network.PrintJobDto
+import com.host.printgateway.printer.ConfiguredPrint
+import com.host.printgateway.printer.CopyResult
+import com.host.printgateway.printer.PrintJobRenderer
 import com.host.printgateway.printer.PrintPipeline
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +38,7 @@ import kotlinx.coroutines.selects.onTimeout
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.io.File
 
 /**
  * Prints local tickets created after start, then prints comandas pushed by HOST.
@@ -92,7 +98,7 @@ class PrintGatewayService : Service() {
                         onTimeout(settings.pollIntervalMs) { null }
                     } ?: continue
                     val retry = printMutex.withLock {
-                        printPushed(api, printerMac, job)
+                        printPushed(api, restaurantDao, printerMac, job)
                     }
                     if (retry) {
                         delay(settings.pollIntervalMs)
@@ -119,32 +125,27 @@ class PrintGatewayService : Service() {
         for (ticket in retryable) {
             if (restaurantDao.claimTicketForPrinting(ticket.id) == 0) continue
             updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
-            val rendered = PrintPipeline.renderKitchenTicketXml(ticket.payload)
-            if (rendered.isFailure) {
-                restaurantDao.markTicketFailed(
-                    ticket.id,
-                    rendered.exceptionOrNull()?.message ?: "XML inválido",
-                )
-                updateNotification("Error comanda: ${ticket.id.take(8)}")
-                continue
-            }
-            val printed = PrintPipeline.printEscPosBytes(rendered.getOrThrow(), printerMac)
-            if (printed.isSuccess) {
-                restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
-                updateNotification("Comanda OK ${ticket.id.take(8)}")
-            } else {
-                restaurantDao.markTicketFailed(
-                    ticket.id,
-                    printed.exceptionOrNull()?.message ?: "print failed",
-                )
-                updateNotification("Error comanda: ${ticket.id.take(8)}")
-                break
+            when (val printed = ConfiguredPrint.printKitchen(restaurantDao, printerMac, ticket.payload)) {
+                CopyResult.Printed -> {
+                    restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                    updateNotification("Comanda OK ${ticket.id.take(8)}")
+                }
+                is CopyResult.Invalid -> {
+                    restaurantDao.markTicketFailed(ticket.id, printed.message)
+                    updateNotification("Error comanda: ${ticket.id.take(8)}")
+                }
+                is CopyResult.Failed -> {
+                    restaurantDao.markTicketFailed(ticket.id, printed.message)
+                    updateNotification("Error comanda: ${ticket.id.take(8)}")
+                    break
+                }
             }
         }
     }
 
     private suspend fun printPushed(
         api: PrintJobApi?,
+        restaurantDao: RestaurantDao,
         printerMac: String,
         job: PrintJobDto,
     ): Boolean {
@@ -155,22 +156,48 @@ class PrintGatewayService : Service() {
         }
 
         updateNotification("Imprimiendo ${job.id.take(8)}…")
-        val rendered = PrintPipeline.renderCloudJob(job)
-        if (rendered.isFailure) {
-            api?.acknowledge(job.id, PrintJobAckRequest(false, rendered.exceptionOrNull()?.message))
-            updateNotification("Formato inválido: ${job.id.take(8)}")
-            return false
+        when (val printed = dispatch(restaurantDao, printerMac, job)) {
+            CopyResult.Printed -> {
+                rememberPrinted(job.id)
+                val acked = api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess
+                updateNotification(if (acked) "OK ${job.id.take(8)}" else "Impreso, sin confirmar")
+                return api != null && !acked
+            }
+            is CopyResult.Invalid -> {
+                api?.acknowledge(job.id, PrintJobAckRequest(false, printed.message))
+                updateNotification("Formato inválido: ${job.id.take(8)}")
+                return false
+            }
+            is CopyResult.Failed -> {
+                updateNotification("Error impresora: ${printed.message.take(60)}")
+                return true
+            }
         }
-        val printed = PrintPipeline.printEscPosBytes(rendered.getOrThrow(), printerMac)
-        if (printed.isSuccess) {
-            rememberPrinted(job.id)
-            val acked = api == null || api.acknowledge(job.id, PrintJobAckRequest(true)).isSuccess
-            updateNotification(if (acked) "OK ${job.id.take(8)}" else "Impreso, sin confirmar")
-            return api != null && !acked
+    }
+
+    private suspend fun dispatch(
+        restaurantDao: RestaurantDao,
+        printerMac: String,
+        job: PrintJobDto,
+    ): CopyResult {
+        if (job.payloadFormat.equals(PrintJobRenderer.FORMAT_KITCHEN_TICKET_XML, ignoreCase = true)) {
+            return ConfiguredPrint.printKitchen(restaurantDao, printerMac, job.payload)
         }
-        val message = printed.exceptionOrNull()?.message ?: "print failed"
-        updateNotification("Error impresora: ${message.take(60)}")
-        return true
+        val logo = invoiceLogo()
+        try {
+            val bytes = PrintPipeline.renderCloudJob(job, logo).getOrElse {
+                return CopyResult.Invalid(it.message ?: "Formato inválido")
+            }
+            return ConfiguredPrint.printInvoice(restaurantDao, printerMac, bytes)
+        } finally {
+            logo?.recycle()
+        }
+    }
+
+    private fun invoiceLogo(): Bitmap? {
+        val path = GatewaySettings(this).logoPath
+        if (path.isBlank() || !File(path).isFile) return null
+        return BitmapFactory.decodeFile(path)
     }
 
     private fun rememberPrinted(id: String) {
