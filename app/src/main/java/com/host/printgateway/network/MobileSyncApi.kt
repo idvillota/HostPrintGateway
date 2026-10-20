@@ -1,5 +1,6 @@
 package com.host.printgateway.network
 
+import com.host.printgateway.data.OrderEntity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
@@ -53,10 +54,12 @@ class MobileSyncApi(
 
     fun uploadBatch(
         deviceId: String,
-        orders: List<Pair<com.host.printgateway.data.OrderEntity, List<AddOrderLineRequest>>>,
+        orders: List<PendingOrderUpload>,
     ): Result<List<BatchOrderResult>> = runCatching {
         val payloadOrders = JSONArray()
-        orders.forEach { (order, lines) ->
+        orders.forEach { pending ->
+            val order = pending.order
+            val lines = pending.lines
             val jsonLines = JSONArray()
             lines.forEach { line ->
                 jsonLines.put(
@@ -74,6 +77,7 @@ class MobileSyncApi(
                     .put("tableCode", order.diningTableCode)
                     .put("waiterName", order.waiterName)
                     .put("openedAtUtc", order.openedAtUtc)
+                    .put("kitchenTicketPrinted", pending.kitchenTicketPrinted)
                     .put("lines", jsonLines),
             )
         }
@@ -189,3 +193,9 @@ class MobileSyncApi(
         }
     }
 }
+
+data class PendingOrderUpload(
+    val order: OrderEntity,
+    val lines: List<AddOrderLineRequest>,
+    val kitchenTicketPrinted: Boolean,
+)

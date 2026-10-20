@@ -187,7 +187,6 @@ class KitchenTicketFormatter {
             byteArrayOf(
                 0x1D,
                 0x56,
-                0x41,
                 0x00,
             ).toList()
         )

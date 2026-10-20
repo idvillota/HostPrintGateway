@@ -6,18 +6,24 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderItemEntity
 
 @Composable
@@ -29,6 +35,7 @@ fun TableMenuScreen(
     onOrderedProducts: () -> Unit,
     onNewOrder: () -> Unit,
     onOpenComanda: () -> Unit,
+    onChangeTable: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -59,6 +66,14 @@ fun TableMenuScreen(
             ) {
                 Text("Hacer pedido")
             }
+            if (onChangeTable != null) {
+                OutlinedButton(
+                    onClick = onChangeTable,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Cambiar mesa")
+                }
+            }
         }
         if (cartCount > 0) {
             Button(
@@ -71,6 +86,62 @@ fun TableMenuScreen(
             }
         }
     }
+}
+
+@Composable
+fun ChangeTableDialog(
+    tables: List<DiningTableEntity>,
+    occupiedTableIds: Set<String>,
+    onDismiss: () -> Unit,
+    onPick: (DiningTableEntity) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cambiar mesa") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 360.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Elige la mesa de destino. Si está ocupada, se pregunta si se fusionan los pedidos.")
+                tables.forEach { table ->
+                    val occupied = table.id in occupiedTableIds || table.isOccupied()
+                    OutlinedButton(
+                        onClick = { onPick(table) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (occupied) "Mesa ${table.code} · ocupada" else "Mesa ${table.code}")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        },
+    )
+}
+
+@Composable
+fun MergeTablesDialog(
+    targetCode: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Fusionar pedidos") },
+        text = {
+            Text("La mesa $targetCode tiene un pedido abierto. ¿Fusionar los pedidos?")
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text("Fusionar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("No") }
+        },
+    )
 }
 
 @Composable

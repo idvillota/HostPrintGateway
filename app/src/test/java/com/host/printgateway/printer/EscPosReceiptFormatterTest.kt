@@ -35,6 +35,7 @@ class EscPosReceiptFormatterTest {
         val text = formatter.format(receipt).toString(Charsets.ISO_8859_1)
         assertTrue(text.contains("Host Bistro"))
         assertTrue(text.contains("Sopa"))
-        assertTrue(text.contains("FACTURA"))
+        assertTrue(text.contains("Implementado por HOST"))
+        assertTrue(!text.contains("FACTURA ELECTRONICA"))
     }
 }

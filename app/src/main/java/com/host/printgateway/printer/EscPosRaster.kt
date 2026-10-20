@@ -7,19 +7,20 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Turns a bitmap into an ESC/POS raster.
- * The saved logo is left unchanged. At print time the artwork is fitted,
- * keeping its proportions, inside a line narrow printers can finish.
+ * Turns a bitmap into one ESC/POS raster.
+ * The saved logo is left unchanged. The row stays 384 dots, the width this
+ * 58 mm head consumes, and the drawing is a small centered mark. A tall
+ * square overflows the printer buffer and the leftover bytes print as text.
  */
 object EscPosRaster {
-    private const val LINE_WIDTH = 360
-    private const val CONTENT_WIDTH = 280
-    private const val CONTENT_HEIGHT = 180
+    private const val OUTPUT_WIDTH = 384
+    private const val CONTENT_WIDTH = 200
+    private const val CONTENT_HEIGHT = 144
 
     fun fromBitmap(source: Bitmap): ByteArray {
         if (source.width <= 0 || source.height <= 0) return byteArrayOf()
         val artwork = cropOuterMargin(source) ?: return byteArrayOf()
-        val placed = placeOnLine(artwork)
+        val placed = placeForPrint(artwork)
         try {
             return encode(placed)
         } finally {
@@ -49,13 +50,10 @@ object EscPosRaster {
         return crop
     }
 
-    private fun placeOnLine(artwork: Bitmap): Bitmap {
+    private fun placeForPrint(artwork: Bitmap): Bitmap {
         val scale = min(
-            1f,
-            min(
-                CONTENT_WIDTH.toFloat() / artwork.width,
-                CONTENT_HEIGHT.toFloat() / artwork.height,
-            ),
+            CONTENT_WIDTH.toFloat() / artwork.width,
+            CONTENT_HEIGHT.toFloat() / artwork.height,
         )
         val width = (artwork.width * scale).roundToInt().coerceIn(1, CONTENT_WIDTH)
         val height = (artwork.height * scale).roundToInt().coerceIn(1, CONTENT_HEIGHT)
@@ -64,10 +62,16 @@ object EscPosRaster {
         } else {
             Bitmap.createScaledBitmap(artwork, width, height, true)
         }
-        val line = Bitmap.createBitmap(LINE_WIDTH, height, Bitmap.Config.ARGB_8888)
+        val canvasHeight = ((height + 7) / 8) * 8
+        val line = Bitmap.createBitmap(OUTPUT_WIDTH, canvasHeight, Bitmap.Config.ARGB_8888)
         Canvas(line).apply {
             drawColor(Color.WHITE)
-            drawBitmap(scaled, ((LINE_WIDTH - width) / 2).toFloat(), 0f, null)
+            drawBitmap(
+                scaled,
+                ((OUTPUT_WIDTH - width) / 2).toFloat(),
+                ((canvasHeight - height) / 2).toFloat(),
+                null,
+            )
         }
         if (scaled !== artwork) scaled.recycle()
         return line

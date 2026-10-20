@@ -94,8 +94,8 @@ class PrintPipelineTest {
         val bytes = PrintPipeline.renderSalesReceiptXml(xml).getOrThrow()
         val text = bytes.toString(Charsets.ISO_8859_1)
         assertTrue(bytes.isNotEmpty())
-        assertTrue(text.contains("FACTURA"))
         assertTrue(text.contains("Host"))
-        assertTrue(text.contains("Diseñado por HOST"))
+        assertTrue(text.contains("Implementado por HOST"))
+        assertTrue(!text.contains("FACTURA ELECTRONICA"))
     }
 }
