@@ -18,10 +18,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.host.printgateway.payment.BreBProfile
 import com.host.printgateway.ui.order.formatPrice
@@ -216,9 +222,11 @@ private fun CustomSplit(
     parts.forEachIndexed { index, value ->
         OutlinedTextField(
             value = value,
-            onValueChange = { onPart(index, it) },
+            onValueChange = { onPart(index, sanitizeMoneyTyping(it)) },
             label = { Text("Parte ${index + 1}") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            visualTransformation = MoneyGroupingTransformation,
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -238,6 +246,44 @@ private fun CustomSplit(
         },
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
+}
+
+private object MoneyGroupingTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        val original = text.text
+        val formatted = groupedMoneyDisplay(original)
+        return TransformedText(
+            AnnotatedString(formatted),
+            object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    val comma = original.indexOf(',')
+                    val integerLength = if (comma >= 0) comma else original.length
+                    val clamped = offset.coerceIn(0, original.length)
+                    val integerOffset = clamped.coerceAtMost(integerLength)
+                    var dots = 0
+                    for (index in 1 until integerOffset) {
+                        if ((integerLength - index) % 3 == 0) dots++
+                    }
+                    return integerOffset + dots + (clamped - integerLength).coerceAtLeast(0)
+                }
+
+                override fun transformedToOriginal(offset: Int): Int {
+                    val target = offset.coerceIn(0, formatted.length)
+                    var originalIndex = 0
+                    var transformedIndex = 0
+                    while (transformedIndex < target && originalIndex < original.length) {
+                        if (formatted[transformedIndex] == '.') {
+                            transformedIndex++
+                            continue
+                        }
+                        transformedIndex++
+                        originalIndex++
+                    }
+                    return originalIndex
+                }
+            },
+        )
+    }
 }
 
 private fun formatQuantity(quantity: Double): String {

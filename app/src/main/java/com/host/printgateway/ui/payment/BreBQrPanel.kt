@@ -32,7 +32,6 @@ import com.host.printgateway.ui.order.formatPrice
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
-import kotlin.math.round
 
 @Composable
 fun BreBQrList(
@@ -42,17 +41,17 @@ fun BreBQrList(
     customParts: List<String>,
     profile: BreBProfile,
 ) {
-    val amounts = transferAmounts(due, splitMode, equalParts, customParts)
-    if (amounts.isEmpty()) return
+    val codes = transferQrAmounts(due, splitMode, equalParts, customParts)
+    if (codes.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        amounts.forEach { amount ->
-            BreBQrCard(amount = amount, profile = profile)
+        codes.forEach { code ->
+            BreBQrCard(amount = code.amount, shares = code.shares, profile = profile)
         }
     }
 }
 
 @Composable
-private fun BreBQrCard(amount: Double, profile: BreBProfile) {
+private fun BreBQrCard(amount: Double, shares: Int, profile: BreBProfile) {
     val reference = remember(amount, profile) {
         UUID.randomUUID().toString().replace("-", "").take(10)
     }
@@ -67,7 +66,11 @@ private fun BreBQrCard(amount: Double, profile: BreBProfile) {
         onSuccess = { text ->
             QrImage(text)
             Text(
-                text = "El cliente escanea este código desde su banco. Registra el pago cuando el dinero haya llegado.",
+                text = if (shares > 1) {
+                    "Este QR vale para las $shares partes de este monto. Cada persona lo escanea desde su banco."
+                } else {
+                    "El cliente escanea este código desde su banco. Registra el pago cuando el dinero haya llegado."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -138,29 +141,3 @@ private fun qrBitmap(payload: String): Bitmap {
     }
     return bitmap
 }
-
-fun transferAmounts(
-    due: Double,
-    mode: SplitMode,
-    equalParts: Int,
-    customParts: List<String>,
-): List<Double> {
-    if (due <= 0.0) return emptyList()
-    return when (mode) {
-        SplitMode.None -> listOf(roundMoney(due))
-        SplitMode.Equal -> equalShares(due, equalParts)
-        SplitMode.Custom -> customParts.mapNotNull { parseAmount(it) }.filter { it > 0.0 }.map(::roundMoney)
-    }
-}
-
-private fun equalShares(due: Double, parts: Int): List<Double> {
-    val count = parts.coerceIn(2, 20)
-    val totalCents = round(due * 100.0).toLong()
-    val base = totalCents / count
-    val remainder = (totalCents % count).toInt()
-    return List(count) { index ->
-        (base + if (index == count - 1) remainder else 0) / 100.0
-    }
-}
-
-private fun roundMoney(value: Double): Double = round(value * 100.0) / 100.0

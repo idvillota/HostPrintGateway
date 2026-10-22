@@ -85,6 +85,14 @@ public final class RestaurantDao_Impl extends RestaurantDao {
 
   private final SharedSQLiteStatement __preparedStmtOfUpdateOrderTotals;
 
+  private final SharedSQLiteStatement __preparedStmtOfUpdateOrderPlacement;
+
+  private final SharedSQLiteStatement __preparedStmtOfShelveMovedOrder;
+
+  private final SharedSQLiteStatement __preparedStmtOfUpdateSyncStatus;
+
+  private final SharedSQLiteStatement __preparedStmtOfReassignOrderItems;
+
   private final SharedSQLiteStatement __preparedStmtOfMarkOrderSynced;
 
   private final SharedSQLiteStatement __preparedStmtOfMarkOrderSyncFailed;
@@ -667,6 +675,38 @@ public final class RestaurantDao_Impl extends RestaurantDao {
       @NonNull
       public String createQuery() {
         final String _query = "UPDATE orders SET subtotal = ?, total = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfUpdateOrderPlacement = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE orders SET diningTableId = ?, diningTableCode = ?, syncStatus = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfShelveMovedOrder = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE orders SET status = 'PAID', diningTableId = NULL, syncStatus = ?, closedAtUtc = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfUpdateSyncStatus = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE orders SET syncStatus = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfReassignOrderItems = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE order_items SET orderId = ? WHERE orderId = ?";
         return _query;
       }
     };
@@ -1308,6 +1348,164 @@ public final class RestaurantDao_Impl extends RestaurantDao {
           }
         } finally {
           __preparedStmtOfUpdateOrderTotals.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object updateOrderPlacement(final String id, final String tableId, final String code,
+      final String syncStatus, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfUpdateOrderPlacement.acquire();
+        int _argIndex = 1;
+        if (tableId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, tableId);
+        }
+        _argIndex = 2;
+        if (code == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, code);
+        }
+        _argIndex = 3;
+        if (syncStatus == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, syncStatus);
+        }
+        _argIndex = 4;
+        if (id == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, id);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfUpdateOrderPlacement.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object shelveMovedOrder(final String id, final String syncStatus, final long closedAt,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfShelveMovedOrder.acquire();
+        int _argIndex = 1;
+        if (syncStatus == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, syncStatus);
+        }
+        _argIndex = 2;
+        _stmt.bindLong(_argIndex, closedAt);
+        _argIndex = 3;
+        if (id == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, id);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfShelveMovedOrder.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object updateSyncStatus(final String id, final String syncStatus,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfUpdateSyncStatus.acquire();
+        int _argIndex = 1;
+        if (syncStatus == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, syncStatus);
+        }
+        _argIndex = 2;
+        if (id == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, id);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfUpdateSyncStatus.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object reassignOrderItems(final String sourceId, final String targetId,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfReassignOrderItems.acquire();
+        int _argIndex = 1;
+        if (targetId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, targetId);
+        }
+        _argIndex = 2;
+        if (sourceId == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, sourceId);
+        }
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfReassignOrderItems.release(_stmt);
         }
       }
     }, $completion);

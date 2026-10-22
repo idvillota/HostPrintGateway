@@ -15,8 +15,35 @@ class TableBillLogicTest {
     fun parseAmount_accepts_comma_decimal_and_rejects_negative() {
         assertEquals(0.0, parseAmount("")!!, 0.0)
         assertEquals(12.5, parseAmount("12,5")!!, 0.0)
+        assertEquals(12.5, parseAmount("12.50")!!, 0.0)
+        assertEquals(1250.0, parseAmount("1.250")!!, 0.0)
+        assertEquals(12500.5, parseAmount("12.500,50")!!, 0.0)
         assertNull(parseAmount("-1"))
         assertNull(parseAmount("abc"))
+    }
+
+    @Test
+    fun sanitizeMoneyTyping_groups_thousands_and_keeps_a_decimal_comma() {
+        assertEquals("12500", sanitizeMoneyTyping("12.500"))
+        assertEquals("12500,5", sanitizeMoneyTyping("12500,5"))
+        assertEquals("12,5", sanitizeMoneyTyping("12.5"))
+        assertEquals("12.500", groupedMoneyDisplay("12500"))
+        assertEquals("12.500,5", groupedMoneyDisplay("12500,5"))
+    }
+
+    @Test
+    fun transferQrAmounts_keeps_one_code_per_distinct_share() {
+        val exact = transferQrAmounts(100.0, SplitMode.Equal, 5, emptyList())
+        assertEquals(1, exact.size)
+        assertEquals(20.0, exact[0].amount, 0.0)
+        assertEquals(5, exact[0].shares)
+
+        val remainder = transferQrAmounts(10.0, SplitMode.Equal, 3, emptyList())
+        assertEquals(2, remainder.size)
+        assertEquals(3.33, remainder[0].amount, 0.001)
+        assertEquals(2, remainder[0].shares)
+        assertEquals(3.34, remainder[1].amount, 0.001)
+        assertEquals(1, remainder[1].shares)
     }
 
     @Test

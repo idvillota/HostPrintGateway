@@ -3,6 +3,7 @@ package com.host.printgateway.ui.payment
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.OrderItemEntity
+import kotlin.math.round
 
 data class TableAccountSummary(
     val tableKey: String,
@@ -108,8 +109,106 @@ fun billOf(
     )
 }
 
+data class TransferQr(
+    val amount: Double,
+    val shares: Int,
+)
+
 fun parseAmount(raw: String): Double? {
-    val cleaned = raw.trim().replace(',', '.')
-    if (cleaned.isEmpty()) return 0.0
-    return cleaned.toDoubleOrNull()?.takeIf { it >= 0.0 }
+    val trimmed = raw.trim()
+    if (trimmed.isEmpty()) return 0.0
+    val normalized = normalizeMoney(trimmed) ?: return null
+    if (normalized.isEmpty()) return 0.0
+    return normalized.toDoubleOrNull()?.takeIf { it >= 0.0 }
+}
+
+/** Digits and one decimal comma. Thousand dots from a paste are removed. */
+fun sanitizeMoneyTyping(raw: String): String {
+    val filtered = raw.filter { it.isDigit() || it == '.' || it == ',' }
+    if (filtered.isEmpty()) return ""
+    val body = if (',' in filtered) {
+        val plain = filtered.replace(".", "")
+        val comma = plain.indexOf(',')
+        val head = plain.substring(0, comma).filter { it.isDigit() }
+        val tail = plain.substring(comma + 1).filter { it.isDigit() }.take(2)
+        head + "," + tail
+    } else if ('.' in filtered) {
+        val parts = filtered.split('.')
+        val grouped = parts.size > 1 && parts.drop(1).all { it.length == 3 }
+        if (grouped) {
+            parts.joinToString("").filter { it.isDigit() }
+        } else if (parts.size == 2) {
+            parts[0].filter { it.isDigit() } + "," + parts[1].filter { it.isDigit() }.take(2)
+        } else {
+            filtered.filter { it.isDigit() }
+        }
+    } else {
+        filtered.filter { it.isDigit() }
+    }
+    val trimmedZero = body.trimStart('0')
+    return when {
+        trimmedZero.isEmpty() -> "0"
+        trimmedZero.startsWith(',') -> "0$trimmedZero"
+        else -> trimmedZero
+    }
+}
+
+/** Shows thousand dots while the stored text stays digits plus an optional comma. */
+fun groupedMoneyDisplay(raw: String): String {
+    val comma = raw.indexOf(',')
+    val integer = if (comma >= 0) raw.substring(0, comma) else raw
+    val fraction = if (comma >= 0) raw.substring(comma) else ""
+    if (integer.length <= 3) return raw
+    val grouped = integer.reversed().chunked(3).joinToString(".").reversed()
+    return grouped + fraction
+}
+
+fun transferQrAmounts(
+    due: Double,
+    mode: SplitMode,
+    equalParts: Int,
+    customParts: List<String>,
+): List<TransferQr> {
+    if (due <= 0.0) return emptyList()
+    val amounts = when (mode) {
+        SplitMode.None -> listOf(roundMoney(due))
+        SplitMode.Equal -> equalShares(due, equalParts)
+        SplitMode.Custom -> customParts.mapNotNull { parseAmount(it) }.filter { it > 0.0 }.map(::roundMoney)
+    }
+    val grouped = linkedMapOf<Long, Int>()
+    for (amount in amounts) {
+        val cents = round(amount * 100.0).toLong()
+        if (cents <= 0L) continue
+        grouped[cents] = (grouped[cents] ?: 0) + 1
+    }
+    return grouped.map { (cents, shares) -> TransferQr(cents / 100.0, shares) }
+}
+
+private fun equalShares(due: Double, parts: Int): List<Double> {
+    val count = parts.coerceIn(2, 20)
+    val totalCents = round(due * 100.0).toLong()
+    if (totalCents <= 0L) return emptyList()
+    val base = totalCents / count
+    val remainder = (totalCents % count).toInt()
+    return List(count) { index ->
+        (base + if (index == count - 1) remainder else 0) / 100.0
+    }
+}
+
+private fun roundMoney(value: Double): Double = round(value * 100.0) / 100.0
+
+private fun normalizeMoney(raw: String): String? {
+    if (raw.any { !it.isDigit() && it != '.' && it != ',' }) return null
+    val canonical = if (',' in raw) {
+        if (raw.count { it == ',' } > 1) return null
+        raw.replace(".", "").replace(',', '.')
+    } else if ('.' in raw) {
+        val parts = raw.split('.')
+        val grouped = parts.size > 1 && parts.drop(1).all { it.length == 3 }
+        if (grouped) parts.joinToString("") else raw
+    } else {
+        raw
+    }
+    if (canonical.count { it == '.' } > 1) return null
+    return canonical
 }
