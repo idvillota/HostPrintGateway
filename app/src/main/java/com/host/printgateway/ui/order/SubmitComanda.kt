@@ -24,6 +24,7 @@ class SubmitComanda(
         deviceId: String,
         lines: List<OrderDraftLine>,
         printerMac: String,
+        printKitchenTickets: Boolean = true,
     ): SubmitOutcome {
         return try {
             val orderId = existingOrderId ?: repository.createOrder(
@@ -34,6 +35,10 @@ class SubmitComanda(
             )
             val ticket = dao.getTicketForOrder(orderId)
                 ?: return SubmitOutcome.Failed("No se generó el XML de la comanda")
+            if (!printKitchenTickets) {
+                dao.markTicketPrinted(ticket.id, System.currentTimeMillis())
+                return SubmitOutcome.Printed(orderId)
+            }
             if (printerMac.isBlank() && dao.getLocalPrinters().none { it.mac.isNotBlank() }) {
                 return SubmitOutcome.NeedsRetry(
                     orderId,
@@ -51,7 +56,7 @@ class SubmitComanda(
                     SubmitOutcome.NeedsRetry(orderId, "La comanda ya se está imprimiendo.")
                 }
             }
-            when (val printed = ConfiguredPrint.printKitchen(dao, printerMac, ticket.payload)) {
+            when (val printed = ConfiguredPrint.printKitchen(dao, printerMac, ticket.payload, printKitchenTickets)) {
                 CopyResult.Printed -> {
                     dao.markTicketPrinted(ticket.id, System.currentTimeMillis())
                     SubmitOutcome.Printed(orderId)

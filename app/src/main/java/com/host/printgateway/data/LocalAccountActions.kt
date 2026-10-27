@@ -17,8 +17,7 @@ internal object LocalAccountActions {
         fun isFree(tableId: String?) = tableId != null && tableId.lowercase() in freeIds
         val staleIds = dao.getUnpaidOrders()
             .filter { order ->
-                SyncMarkers.parseMove(order.syncStatus) == null &&
-                    isFree(order.diningTableId) &&
+                isFree(order.diningTableId) &&
                     !order.remoteId.isNullOrBlank()
             }
             .map { it.id }

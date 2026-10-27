@@ -198,6 +198,11 @@ private fun PrinterEditor(
             modifier = Modifier.fillMaxWidth(),
         )
         Text("Categorías", style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = "Solo se imprime lo marcado. Si una categoría no está marcada en ninguna impresora, esa línea no sale.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         if (types.isEmpty()) {
             Text(
                 "Sincroniza el catálogo para ver las categorías de HOST.",

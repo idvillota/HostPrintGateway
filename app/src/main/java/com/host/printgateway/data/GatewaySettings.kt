@@ -12,8 +12,8 @@ class GatewaySettings(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     var apiBaseUrl: String
-        get() = prefs.getString(KEY_API_URL, DEFAULT_API_URL).orEmpty()
-        set(value) = prefs.edit().putString(KEY_API_URL, value.trim().trimEnd('/')).apply()
+        get() = DEFAULT_API_URL
+        set(_) = prefs.edit().putString(KEY_API_URL, DEFAULT_API_URL).apply()
 
     var deviceToken: String
         get() = prefs.getString(KEY_TOKEN, null).orEmpty().ifBlank { BackendAuth.DEFAULT_TOKEN }
@@ -42,6 +42,10 @@ class GatewaySettings(context: Context) {
     var offlineMode: Boolean
         get() = prefs.getBoolean(KEY_OFFLINE_MODE, false)
         set(value) = prefs.edit().putBoolean(KEY_OFFLINE_MODE, value).apply()
+
+    var printKitchenTickets: Boolean
+        get() = prefs.getBoolean(KEY_PRINT_KITCHEN, true)
+        set(value) = prefs.edit().putBoolean(KEY_PRINT_KITCHEN, value).apply()
 
     var logoPath: String
         get() = prefs.getString(KEY_LOGO, "").orEmpty()
@@ -80,13 +84,14 @@ class GatewaySettings(context: Context) {
         private const val KEY_AUTO_SYNC_MS = "auto_sync_interval_ms"
         private const val KEY_SALE_CURSOR = "sale_cursor"
         private const val KEY_OFFLINE_MODE = "offline_mode"
+        private const val KEY_PRINT_KITCHEN = "print_kitchen_tickets"
         private const val KEY_LOGO = "restaurant_logo"
         private const val KEY_BREB_KEY = "breb_key"
         private const val KEY_BREB_TYPE = "breb_key_type"
         private const val KEY_BREB_NAME = "breb_merchant_name"
         private const val KEY_BREB_CITY = "breb_city"
         private const val KEY_BREB_POSTAL = "breb_postal"
-        const val DEFAULT_API_URL = "http://10.0.2.2:5228"
+        const val DEFAULT_API_URL = "http://192.168.39.182:5228"
         const val DEFAULT_POLL_MS = 3_000L
         const val DEFAULT_AUTO_SYNC_MS = 15 * 60 * 1000L
     }

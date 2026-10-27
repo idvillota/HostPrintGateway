@@ -31,12 +31,6 @@ class RestaurantRepository(
         printReceipt: Boolean = false,
     ) = orders.markPaidForSync(orderIds, paymentMethod, tip, printReceipt)
 
-    suspend fun moveOpenOrders(
-        fromTableId: String,
-        toTableId: String,
-        merge: Boolean,
-    ): MoveTableOutcome = orders.moveOpenOrders(fromTableId, toTableId, merge)
-
     suspend fun closeOrdersOnFreeHostTables() =
         sync.closeOrdersOnFreeHostTables()
 

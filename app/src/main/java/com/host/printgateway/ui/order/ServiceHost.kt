@@ -12,7 +12,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.GatewaySettings
-import com.host.printgateway.data.MoveTableOutcome
 import com.host.printgateway.data.OrderDraftLine
 import com.host.printgateway.data.OrderItemEntity
 import com.host.printgateway.data.PrintGatewayDatabase
@@ -55,9 +54,6 @@ fun ServiceHost(
     var syncing by remember { mutableStateOf(false) }
     var occupiedTableIds by remember { mutableStateOf(emptySet<String>()) }
     var orderedItems by remember { mutableStateOf(emptyList<OrderItemEntity>()) }
-    var changeFromTableId by remember { mutableStateOf<String?>(null) }
-    var mergeTarget by remember { mutableStateOf<DiningTableEntity?>(null) }
-    var movingTable by remember { mutableStateOf(false) }
 
     val detailProductId = (step as? OrderingStep.ProductDetail)?.productId
     var draftNotes by remember(detailProductId) { mutableStateOf("") }
@@ -222,15 +218,6 @@ fun ServiceHost(
                 onOpenComanda = {
                     open(OrderingStep.Comanda(step.tableId, step))
                 },
-                onChangeTable = if (
-                    offlineMode &&
-                    step.tableId in occupiedTableIds &&
-                    !movingTable
-                ) {
-                    { changeFromTableId = step.tableId }
-                } else {
-                    null
-                },
             )
 
             is OrderingStep.OrderedProducts -> OrderedProductsScreen(
@@ -327,6 +314,7 @@ fun ServiceHost(
                                     deviceId = deviceId,
                                     lines = lines,
                                     printerMac = printerMac,
+                                    printKitchenTickets = settings.printKitchenTickets,
                                 )
                             }
                             session.sending = false
@@ -353,60 +341,6 @@ fun ServiceHost(
                 )
             }
         }
-    }
-
-    fun moveTable(fromId: String, target: DiningTableEntity, merge: Boolean) {
-        if (movingTable) return
-        movingTable = true
-        scope.launch {
-            val outcome = withContext(Dispatchers.IO) {
-                repository.moveOpenOrders(fromId, target.id, merge)
-            }
-            movingTable = false
-            when (outcome) {
-                is MoveTableOutcome.Moved -> {
-                    changeFromTableId = null
-                    mergeTarget = null
-                    if (session.tableId == fromId) {
-                        session.clearCart()
-                        session.tableId = target.id
-                    }
-                    val refreshed = withContext(Dispatchers.IO) {
-                        dao.getUnpaidOrders().mapNotNull { it.diningTableId }.toSet() to dao.getTables()
-                    }
-                    occupiedTableIds = refreshed.first
-                    tables = refreshed.second
-                    open(OrderingStep.TableMenu(target.id), "Pedido en la mesa ${outcome.tableCode}.")
-                }
-                is MoveTableOutcome.MergeRequired -> mergeTarget = target
-                is MoveTableOutcome.Rejected -> session.notice = outcome.message
-            }
-        }
-    }
-
-    val fromTableId = changeFromTableId
-    if (fromTableId != null && mergeTarget == null) {
-        ChangeTableDialog(
-            tables = tables.filter { it.isActive && it.id != fromTableId },
-            occupiedTableIds = occupiedTableIds,
-            onDismiss = { if (!movingTable) changeFromTableId = null },
-            onPick = { target ->
-                moveTable(fromTableId, target, merge = false)
-            },
-        )
-    }
-    val pendingMerge = mergeTarget
-    if (fromTableId != null && pendingMerge != null) {
-        MergeTablesDialog(
-            targetCode = pendingMerge.code,
-            onConfirm = { moveTable(fromTableId, pendingMerge, merge = true) },
-            onDismiss = {
-                if (!movingTable) {
-                    mergeTarget = null
-                    changeFromTableId = null
-                }
-            },
-        )
     }
 }
 

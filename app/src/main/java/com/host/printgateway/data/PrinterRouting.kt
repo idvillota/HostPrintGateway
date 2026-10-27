@@ -2,8 +2,9 @@ package com.host.printgateway.data
 
 /**
  * Chooses which configured printer receives each kitchen line or the invoice.
- * A printer with no categories is the catch-all for lines nobody else claimed.
- * Lines still unclaimed are sent to every printer so a comanda is not dropped.
+ * A line prints only on printers that marked that category.
+ * A printer with no categories still receives leftover lines nobody marked.
+ * An unmarked invoice printer does not print the receipt.
  */
 internal object PrinterRouting {
 
@@ -23,7 +24,7 @@ internal object PrinterRouting {
             val targets = when {
                 matches.isNotEmpty() -> matches
                 catchAll.isNotEmpty() -> catchAll
-                else -> active
+                else -> emptyList()
             }
             targets.forEach { printer ->
                 indexesByMac.getOrPut(printer.mac) { linkedSetOf() }.add(index)
@@ -33,10 +34,10 @@ internal object PrinterRouting {
     }
 
     fun invoiceMacs(printers: List<PrinterTarget>): List<String> {
-        val active = printers.filter { it.mac.isNotBlank() }
-        if (active.isEmpty()) return emptyList()
-        val marked = active.filter { it.printsInvoices }.map { it.mac }.distinct()
-        return marked.ifEmpty { active.map { it.mac }.distinct() }
+        return printers
+            .filter { it.mac.isNotBlank() && it.printsInvoices }
+            .map { it.mac }
+            .distinct()
     }
 }
 

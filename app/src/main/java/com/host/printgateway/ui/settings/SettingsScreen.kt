@@ -47,7 +47,6 @@ fun SettingsScreen(
     status: String,
     database: PrintGatewayDatabase,
     settings: GatewaySettings,
-    onApiUrlChange: (String) -> Unit,
     onPrinterMacChange: (String) -> Unit,
     onLogoChange: (String) -> Unit,
     onBack: () -> Unit,
@@ -66,6 +65,7 @@ fun SettingsScreen(
     var showPrinterMenu by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     var manualXml by remember { mutableStateOf("") }
+    var printKitchenTickets by remember { mutableStateOf(settings.printKitchenTickets) }
 
     if (showPrinterMenu) {
         PrinterMenuScreen(
@@ -105,16 +105,14 @@ fun SettingsScreen(
 
             SectionTitle("Servidor")
             Text(
-                text = "Dirección del sistema Host. Hace falta para iniciar sesión.",
+                text = "HOST de producción. Esta dirección queda fija en la instalación.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedTextField(
-                value = apiUrl,
-                onValueChange = onApiUrlChange,
-                label = { Text("URL del servidor") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = apiUrl,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
             SectionTitle("Sincronización")
@@ -157,6 +155,30 @@ fun SettingsScreen(
             }
 
             SectionTitle("Impresoras")
+            Text(
+                text = if (printKitchenTickets) {
+                    "Las comandas de cocina se envían a la impresora."
+                } else {
+                    "Las comandas de cocina no se imprimen. El pedido se guarda igual. Las facturas no cambian."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = {
+                    printKitchenTickets = !printKitchenTickets
+                    settings.printKitchenTickets = printKitchenTickets
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    if (printKitchenTickets) {
+                        "Dejar de imprimir comandas"
+                    } else {
+                        "Imprimir comandas de cocina"
+                    },
+                )
+            }
             Button(
                 onClick = { showPrinterMenu = true },
                 modifier = Modifier.fillMaxWidth(),

@@ -36,10 +36,11 @@ class PrinterRoutingTest {
     }
 
     @Test
-    fun an_unassigned_category_is_not_dropped() {
+    fun an_unmarked_category_is_not_printed() {
         val grill = PrinterTarget("g", "11", setOf("parrilla"), printsInvoices = false)
         val copies = PrinterRouting.kitchenCopies(listOf("parrilla", "nueva"), listOf(grill))
 
-        assertEquals(setOf(0, 1), copies.single().lineIndexes)
+        assertEquals(setOf(0), copies.single().lineIndexes)
+        assertEquals(emptyList<String>(), PrinterRouting.invoiceMacs(listOf(grill)))
     }
 }

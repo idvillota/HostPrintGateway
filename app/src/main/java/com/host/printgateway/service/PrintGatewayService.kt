@@ -17,7 +17,6 @@ import androidx.core.app.NotificationCompat
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.RestaurantDao
-import com.host.printgateway.data.RestaurantStatuses
 import com.host.printgateway.network.PrintJobAckRequest
 import com.host.printgateway.network.PrintJobApi
 import com.host.printgateway.network.PrintJobDto
@@ -120,12 +119,13 @@ class PrintGatewayService : Service() {
         startedAt: Long,
     ) {
         val retryable = restaurantDao.getPendingTickets().filter {
-            it.createdAt >= startedAt && it.status == RestaurantStatuses.TICKET_FAILED
+            it.createdAt >= startedAt
         }
         for (ticket in retryable) {
             if (restaurantDao.claimTicketForPrinting(ticket.id) == 0) continue
             updateNotification("Imprimiendo comanda ${ticket.id.take(8)}…")
-            when (val printed = ConfiguredPrint.printKitchen(restaurantDao, printerMac, ticket.payload)) {
+            val printKitchen = GatewaySettings(this@PrintGatewayService).printKitchenTickets
+            when (val printed = ConfiguredPrint.printKitchen(restaurantDao, printerMac, ticket.payload, printKitchen)) {
                 CopyResult.Printed -> {
                     restaurantDao.markTicketPrinted(ticket.id, System.currentTimeMillis())
                     updateNotification("Comanda OK ${ticket.id.take(8)}")
@@ -181,7 +181,8 @@ class PrintGatewayService : Service() {
         job: PrintJobDto,
     ): CopyResult {
         if (job.payloadFormat.equals(PrintJobRenderer.FORMAT_KITCHEN_TICKET_XML, ignoreCase = true)) {
-            return ConfiguredPrint.printKitchen(restaurantDao, printerMac, job.payload)
+            val printKitchen = GatewaySettings(this).printKitchenTickets
+            return ConfiguredPrint.printKitchen(restaurantDao, printerMac, job.payload, printKitchen)
         }
         val logo = invoiceLogo()
         try {

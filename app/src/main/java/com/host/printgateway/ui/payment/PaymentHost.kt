@@ -15,8 +15,15 @@ import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.OrderItemEntity
 import com.host.printgateway.data.PrintGatewayDatabase
+import com.host.printgateway.data.RestaurantDao
 import com.host.printgateway.data.RestaurantRepository
 import com.host.printgateway.network.SyncUnauthorized
+import com.host.printgateway.printer.ConfiguredPrint
+import com.host.printgateway.printer.CopyResult
+import com.host.printgateway.printer.PrintPipeline
+import com.host.printgateway.receipt.InvoiceDraft
+import com.host.printgateway.receipt.InvoiceXml
+import com.host.printgateway.receipt.ReceiptLine
 import com.host.printgateway.ui.SessionRenewalNotifier
 import com.host.printgateway.ui.components.AppScaffold
 import com.host.printgateway.ui.navigation.PaymentStep
@@ -39,6 +46,7 @@ fun PaymentHost(
     onOpenSettings: () -> Unit,
     catalogRevision: Int,
     offlineMode: Boolean,
+    printerMac: String,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -97,25 +105,44 @@ fun PaymentHost(
             return
         }
         sending = true
-        notice = if (printInvoice) "Enviando factura…" else "Cobrando…"
+        notice = if (printInvoice) "Imprimiendo factura…" else "Cobrando…"
         scope.launch {
             val deviceId = DeviceIdProvider.get(context)
-            val uploaded = withContext(Dispatchers.IO) {
-                repository.markPaidForSync(current.orderIds, paymentMethod, tip, printInvoice)
-                when {
+            val printHostReceipt = printInvoice && !offlineMode
+            val outcome = withContext(Dispatchers.IO) {
+                repository.markPaidForSync(current.orderIds, paymentMethod, tip, printHostReceipt)
+                val printed = if (printInvoice && offlineMode) {
+                    printLocalInvoice(
+                        dao = dao,
+                        printerMac = printerMac,
+                        bill = current,
+                        tip = tip,
+                        paymentMethod = paymentMethod,
+                        splitMode = splitMode,
+                        equalParts = equalParts,
+                        customParts = customParts,
+                    )
+                } else {
+                    CopyResult.Printed
+                }
+                val uploaded = when {
                     offlineMode -> Result.success(0)
                     apiUrl.isBlank() || deviceToken.isBlank() ->
                         Result.failure(IllegalStateException("No hay conexión con HOST."))
                     else -> repository.syncPendingOrders(apiUrl, deviceId)
                 }
+                printed to uploaded
             }
             reload()
             sending = false
+            val printed = outcome.first
+            val uploaded = outcome.second
             notice = when {
-                !printInvoice && uploaded.isSuccess -> "Cobro registrado."
-                !printInvoice -> uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."
-                uploaded.isSuccess && !offlineMode -> "Cobro registrado. La factura se envió a la impresora."
-                else -> {
+                printInvoice && printed is CopyResult.Failed -> printed.message
+                printInvoice && printed is CopyResult.Invalid -> printed.message
+                printInvoice && offlineMode -> "Cobro guardado. La factura se imprimió en el celular."
+                printInvoice && uploaded.isSuccess -> "Cobro registrado. La factura se envió a la impresora."
+                printInvoice -> {
                     val reason = uploaded.exceptionOrNull()?.message
                     if (reason.isNullOrBlank()) {
                         "Cobro guardado. La factura se imprimirá cuando HOST reciba el pago."
@@ -123,6 +150,8 @@ fun PaymentHost(
                         "Cobro guardado. $reason La factura se imprimirá cuando HOST reciba el pago."
                     }
                 }
+                uploaded.isSuccess -> "Cobro registrado."
+                else -> uploaded.exceptionOrNull()?.message ?: "No se pudo cobrar en HOST."
             }
             onStep(PaymentStep.Accounts)
         }
@@ -224,6 +253,44 @@ private fun splitNote(
             values.joinToString(" + ") { formatPrice(it) }
         }
     }
+}
+
+private suspend fun printLocalInvoice(
+    dao: RestaurantDao,
+    printerMac: String,
+    bill: TableBill,
+    tip: Double,
+    paymentMethod: String,
+    splitMode: SplitMode,
+    equalParts: Int,
+    customParts: List<String>,
+): CopyResult {
+    val split = splitNote(splitMode, equalParts, customParts, bill.foodTotal + tip).orEmpty()
+    val xml = InvoiceXml.write(
+        InvoiceDraft(
+            invoiceNumber = bill.orderIds.firstOrNull()?.take(8)?.uppercase(Locale.US) ?: "LOCAL",
+            tableCode = bill.tableCode,
+            cashier = bill.cashier,
+            lines = bill.lines.map { line ->
+                ReceiptLine(
+                    description = line.description,
+                    quantity = line.quantity,
+                    unitPrice = line.unitPrice,
+                    lineTotal = line.lineTotal,
+                )
+            },
+            articleCount = bill.articleCount,
+            foodTotal = bill.foodTotal,
+            taxAmount = bill.taxAmount,
+            tip = tip,
+            paymentMethod = paymentMethod,
+            splitNote = split,
+        ),
+    )
+    val bytes = PrintPipeline.renderSalesReceiptXml(xml).getOrElse { error ->
+        return CopyResult.Failed(error.message ?: "No se pudo armar la factura.")
+    }
+    return ConfiguredPrint.printInvoice(dao, printerMac, bytes)
 }
 
 private fun moneyInput(value: Double): String {

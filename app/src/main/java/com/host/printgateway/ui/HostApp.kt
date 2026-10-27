@@ -287,7 +287,6 @@ fun HostApp(
                 status = settingsStatus,
                 database = database,
                 settings = settings,
-                onApiUrlChange = { apiUrl = it },
                 onPrinterMacChange = { printerMac = it },
                 onLogoChange = { path ->
                     settings.logoPath = path
@@ -365,6 +364,7 @@ fun HostApp(
                 onOpenSettings = ::openSettings,
                 catalogRevision = catalogRevision,
                 offlineMode = offlineMode,
+                printerMac = printerMac,
             )
 
             is AppRoute.Ordering -> ServiceHost(

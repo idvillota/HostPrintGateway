@@ -9,13 +9,23 @@ import com.host.printgateway.data.RestaurantDao
  */
 object ConfiguredPrint {
 
-    suspend fun printKitchen(dao: RestaurantDao, fallbackMac: String, payload: String): CopyResult {
+    suspend fun printKitchen(
+        dao: RestaurantDao,
+        fallbackMac: String,
+        payload: String,
+        printKitchenTickets: Boolean = true,
+    ): CopyResult {
+        if (!printKitchenTickets) return CopyResult.Printed
         val formatter = KitchenTicketFormatter()
         val categories = runCatching { formatter.categoryIds(payload) }.getOrElse {
             return CopyResult.Invalid(it.message ?: "XML inválido")
         }
-        val copies = PrinterRouting.kitchenCopies(categories, PrinterSetupStore(dao).targets(fallbackMac))
+        val printers = PrinterSetupStore(dao).targets(fallbackMac)
+        val copies = PrinterRouting.kitchenCopies(categories, printers)
         if (copies.isEmpty()) {
+            if (printers.any { it.categoryIds.isNotEmpty() }) {
+                return CopyResult.Printed
+            }
             return PrintPipeline.printKitchenTicketXml(payload, fallbackMac).toCopyResult()
         }
         var failure: String? = null
@@ -30,10 +40,17 @@ object ConfiguredPrint {
     }
 
     suspend fun printInvoice(dao: RestaurantDao, fallbackMac: String, bytes: ByteArray): CopyResult {
-        val macs = PrinterRouting.invoiceMacs(PrinterSetupStore(dao).targets(fallbackMac))
-            .ifEmpty { listOf(fallbackMac.trim()).filter { it.isNotEmpty() } }
+        val printers = PrinterSetupStore(dao).targets(fallbackMac)
+        val macs = PrinterRouting.invoiceMacs(printers)
         if (macs.isEmpty()) {
-            return CopyResult.Failed("Indica la MAC de la impresora en Configuración.")
+            if (printers.isNotEmpty()) {
+                return CopyResult.Failed("Marca Facturas en la impresora que debe imprimir el recibo.")
+            }
+            val fallback = fallbackMac.trim()
+            if (fallback.isEmpty()) {
+                return CopyResult.Failed("Indica la MAC de la impresora en Configuración.")
+            }
+            return PrintPipeline.printEscPosBytes(bytes, fallback).toCopyResult()
         }
         var failure: String? = null
         for (mac in macs) {
