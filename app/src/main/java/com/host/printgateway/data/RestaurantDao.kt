@@ -141,7 +141,7 @@ abstract class RestaurantDao {
     @Insert
     abstract suspend fun insertOrder(order: OrderEntity)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertOrderItems(items: List<OrderItemEntity>)
 
     @Insert
@@ -188,6 +188,24 @@ abstract class RestaurantDao {
 
     @Query("UPDATE orders SET subtotal = :subtotal, total = :total WHERE id = :id")
     abstract suspend fun updateOrderTotals(id: String, subtotal: Double, total: Double)
+
+    @Query("UPDATE orders SET diningTableId = :tableId, diningTableCode = :code, syncStatus = :syncStatus, remoteId = :remoteId WHERE id = :id")
+    abstract suspend fun updateOrderPlacement(
+        id: String,
+        tableId: String,
+        code: String,
+        syncStatus: String,
+        remoteId: String?,
+    )
+
+    @Query("UPDATE orders SET status = 'PAID', diningTableId = NULL, syncStatus = :syncStatus, closedAtUtc = :closedAt WHERE id = :id")
+    abstract suspend fun shelveMovedOrder(id: String, syncStatus: String, closedAt: Long)
+
+    @Query("UPDATE orders SET syncStatus = :syncStatus WHERE id = :id")
+    abstract suspend fun updateSyncStatus(id: String, syncStatus: String)
+
+    @Query("UPDATE order_items SET orderId = :targetId WHERE orderId = :sourceId")
+    abstract suspend fun reassignOrderItems(sourceId: String, targetId: String)
 
     @Query("SELECT * FROM order_items WHERE orderId = :orderId ORDER BY id")
     abstract suspend fun getOrderItems(orderId: String): List<OrderItemEntity>

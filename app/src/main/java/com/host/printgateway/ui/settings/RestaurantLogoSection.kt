@@ -72,7 +72,7 @@ fun RestaurantLogoSection(
     }
 
     Text(
-        text = "Si eliges una imagen, reemplaza el logo de Host al entrar y en el inicio.",
+        text = "Si eliges una imagen, se muestra al entrar y en el inicio. El logo de Host queda en la barra superior.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

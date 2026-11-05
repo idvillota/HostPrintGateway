@@ -16,6 +16,94 @@ android {
         versionName = "1.0.0"
     }
 
+    flavorDimensions += "environment"
+    productFlavors {
+        create("dev") {
+            dimension = "environment"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"http://192.168.39.182:5228\"",
+            )
+            buildConfigField(
+                "String",
+                "API_LAN_URL",
+                "\"http://192.168.39.182:5228\"",
+            )
+            buildConfigField(
+                "String",
+                "API_CLOUD_URL",
+                "\"https://restaurant-api-dev-hme4bxgrdkbkczb7.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField(
+                "String",
+                "API_PROD_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField("boolean", "CAN_CHOOSE_API", "true")
+            buildConfigField("boolean", "READ_ONLY", "false")
+            buildConfigField("String", "API_ENVIRONMENT", "\"desarrollo\"")
+            resValue("string", "app_name", "Host Lite Dev")
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
+        create("prod") {
+            dimension = "environment"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField("String", "API_LAN_URL", "\"\"")
+            buildConfigField(
+                "String",
+                "API_CLOUD_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField(
+                "String",
+                "API_PROD_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField("boolean", "CAN_CHOOSE_API", "false")
+            buildConfigField("boolean", "READ_ONLY", "false")
+            buildConfigField("String", "API_ENVIRONMENT", "\"producción\"")
+            resValue("string", "app_name", "Host Lite")
+            manifestPlaceholders["usesCleartextTraffic"] = "false"
+        }
+        create("view") {
+            dimension = "environment"
+            applicationIdSuffix = ".view"
+            versionNameSuffix = "-view"
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField(
+                "String",
+                "API_LAN_URL",
+                "\"http://192.168.39.182:5228\"",
+            )
+            buildConfigField(
+                "String",
+                "API_CLOUD_URL",
+                "\"https://restaurant-api-dev-hme4bxgrdkbkczb7.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField(
+                "String",
+                "API_PROD_URL",
+                "\"https://restaurant-api-prod-hqf5ascneseveyg8.eastus-01.azurewebsites.net\"",
+            )
+            buildConfigField("boolean", "CAN_CHOOSE_API", "true")
+            buildConfigField("boolean", "READ_ONLY", "true")
+            buildConfigField("String", "API_ENVIRONMENT", "\"consulta\"")
+            resValue("string", "app_name", "Host Lite Vista")
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -34,6 +122,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"

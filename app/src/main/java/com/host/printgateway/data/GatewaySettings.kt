@@ -1,6 +1,7 @@
 package com.host.printgateway.data
 
 import android.content.Context
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.network.BackendAuth
 import com.host.printgateway.payment.BreBProfile
 
@@ -12,8 +13,16 @@ class GatewaySettings(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     var apiBaseUrl: String
-        get() = DEFAULT_API_URL
-        set(_) = prefs.edit().putString(KEY_API_URL, DEFAULT_API_URL).apply()
+        get() = resolveApiUrl(prefs.getString(KEY_API_URL, null))
+        set(value) {
+            val url = resolveApiUrl(value)
+            val previous = resolveApiUrl(prefs.getString(KEY_API_URL, null))
+            val editor = prefs.edit().putString(KEY_API_URL, url)
+            if (url != previous) {
+                editor.putString(KEY_SALE_CURSOR, "")
+            }
+            editor.apply()
+        }
 
     var deviceToken: String
         get() = prefs.getString(KEY_TOKEN, null).orEmpty().ifBlank { BackendAuth.DEFAULT_TOKEN }
@@ -75,6 +84,30 @@ class GatewaySettings(context: Context) {
     fun isPrinterConfigured(): Boolean = printerMac.isNotBlank()
 
     companion object {
+        fun hostApiChoices(): List<HostApiChoice> {
+            if (BuildConfig.READ_ONLY) {
+                return listOf(
+                    HostApiChoice("Local (192.168.39.182)", normalizeUrl(BuildConfig.API_LAN_URL)),
+                    HostApiChoice("API de desarrollo (Azure)", normalizeUrl(BuildConfig.API_CLOUD_URL)),
+                    HostApiChoice("Producción", normalizeUrl(BuildConfig.API_PROD_URL)),
+                ).filter { it.url.isNotBlank() }
+            }
+            if (!BuildConfig.CAN_CHOOSE_API) {
+                return listOf(HostApiChoice("Producción", normalizeUrl(BuildConfig.API_BASE_URL)))
+            }
+            return listOf(
+                HostApiChoice("Local (192.168.39.182)", normalizeUrl(BuildConfig.API_LAN_URL)),
+                HostApiChoice("API de desarrollo (Azure)", normalizeUrl(BuildConfig.API_CLOUD_URL)),
+            )
+        }
+
+        fun resolveApiUrl(requested: String?): String {
+            val allowed = hostApiChoices().map { it.url }.toSet()
+            val value = normalizeUrl(requested.orEmpty())
+            return if (value in allowed) value else normalizeUrl(BuildConfig.API_BASE_URL)
+        }
+
+        private fun normalizeUrl(url: String): String = url.trim().trimEnd('/')
         private const val PREFS = "host_print_gateway"
         private const val KEY_API_URL = "api_base_url"
         private const val KEY_TOKEN = "device_token"
@@ -91,8 +124,12 @@ class GatewaySettings(context: Context) {
         private const val KEY_BREB_NAME = "breb_merchant_name"
         private const val KEY_BREB_CITY = "breb_city"
         private const val KEY_BREB_POSTAL = "breb_postal"
-        const val DEFAULT_API_URL = "http://192.168.39.182:5228"
         const val DEFAULT_POLL_MS = 3_000L
         const val DEFAULT_AUTO_SYNC_MS = 15 * 60 * 1000L
     }
 }
+
+data class HostApiChoice(
+    val title: String,
+    val url: String,
+)

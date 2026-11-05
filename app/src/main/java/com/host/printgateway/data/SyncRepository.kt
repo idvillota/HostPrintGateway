@@ -4,7 +4,9 @@ import com.host.printgateway.network.AddOrderLineRequest
 import com.host.printgateway.network.CatalogApi
 import com.host.printgateway.network.MobileSyncApi
 import com.host.printgateway.network.PendingOrderUpload
+import com.host.printgateway.network.RelocateOrderResult
 import com.host.printgateway.network.RemoteSale
+import com.host.printgateway.network.SalesOrderApi
 import java.util.Locale
 import java.util.UUID
 
@@ -15,10 +17,12 @@ class SyncRepository(
     private val dao = database.restaurantDao()
 
     suspend fun closeOrdersOnFreeHostTables() {
+        if (dao.getOrders().any { SyncMarkers.parseMove(it.syncStatus) != null }) return
         val freeTableIds = dao.getTables().filterNot { it.isOccupied() }.map { it.id }.toSet()
         val staleIds = dao.getUnpaidOrders()
             .filter { order ->
-                order.diningTableId == null || order.diningTableId in freeTableIds
+                SyncMarkers.parseMove(order.syncStatus) == null &&
+                    (order.diningTableId == null || order.diningTableId in freeTableIds)
             }
             .map { it.id }
         if (staleIds.isEmpty()) return
@@ -39,7 +43,17 @@ class SyncRepository(
     ): Result<Int> = runCatching {
         val pending = dao.getOrdersPendingSync()
         val errors = mutableListOf<String>()
-        if (pending.isEmpty()) {
+        val queuedMoves = dao.getOrders().mapNotNull { order ->
+            val move = SyncMarkers.parseMove(order.syncStatus) ?: return@mapNotNull null
+            PendingTableMove(
+                orderId = order.id,
+                fromTableId = move.fromTableId,
+                toTableId = move.toTableId,
+                at = move.at,
+                merge = move.merge,
+            )
+        }
+        if (pending.isEmpty() && queuedMoves.isEmpty()) {
             healOccupiedTables(baseUrl, deviceId, errors)
             if (errors.isNotEmpty()) error(errors.distinct().joinToString(" "))
             return@runCatching 0
@@ -64,20 +78,33 @@ class SyncRepository(
                     orderIds = group.map { it.orderId },
                 )
             }
-        }.sortedBy { it.closedAt }
-        for (charge in charges) {
-            if (charge.tableKey in stoppedTables) continue
-            val group = charge.orderIds.mapNotNull { dao.getOrder(it) }
-            if (group.isEmpty()) continue
-            val settled = settleOfflinePayment(baseUrl, deviceId, group, errors)
-            synced += settled.synced
-            if (!settled.cleared) {
-                stoppedTables += charge.tableKey
+        }
+        for (event in PendingSync.syncTimeline(charges, queuedMoves)) {
+            when (event) {
+                is SyncEvent.Charge -> {
+                    if (event.tableKey in stoppedTables) continue
+                    val group = event.orderIds.mapNotNull { dao.getOrder(it) }
+                    if (group.isEmpty()) continue
+                    val settled = settleOfflinePayment(baseUrl, deviceId, group, errors)
+                    synced += settled.synced
+                    if (!settled.cleared) {
+                        stoppedTables += event.tableKey
+                    }
+                }
+                is SyncEvent.Move -> {
+                    if (!replayQueuedMove(baseUrl, event.move, errors)) {
+                        stoppedTables += event.move.fromTableId
+                        stoppedTables += event.move.toTableId
+                    } else {
+                        synced++
+                    }
+                }
             }
         }
 
         val lineOrders = dao.getOrdersPendingSync().filter { order ->
-            !SyncMarkers.isPayment(order.syncStatus)
+            !SyncMarkers.isPayment(order.syncStatus) &&
+                !SyncMarkers.isStandaloneMove(order.syncStatus)
         }
         val readyLines = lineOrders.filter {
             PendingSync.isReadyToUpload(it.diningTableId, it.id, stoppedTables)
@@ -90,6 +117,59 @@ class SyncRepository(
         healOccupiedTables(baseUrl, deviceId, errors)
         if (errors.isNotEmpty()) error(errors.distinct().joinToString(" "))
         synced
+    }
+
+    private suspend fun replayQueuedMove(
+        baseUrl: String,
+        move: PendingTableMove,
+        errors: MutableList<String>,
+    ): Boolean {
+        val order = dao.getOrder(move.orderId) ?: return true
+        val remoteId = order.remoteId?.takeIf { it.isNotBlank() }
+        if (remoteId == null) {
+            clearMoveMarker(order)
+            return true
+        }
+        val relocated = SalesOrderApi(baseUrl, deviceToken)
+            .relocate(remoteId, move.toTableId, move.merge)
+            .getOrElse { failure ->
+                errors += failure.message ?: "No se pudo cambiar la mesa."
+                return false
+            }
+        if (relocated.action.equals(RelocateOrderResult.MERGE_REQUIRED, ignoreCase = true) ||
+            relocated.action.equals(RelocateOrderResult.CANCELLED, ignoreCase = true)
+        ) {
+            errors += relocated.message.ifBlank { "No se pudo cambiar la mesa." }
+            return false
+        }
+        val targetRemoteId = relocated.targetOrderId.ifBlank { remoteId }
+        if (relocated.lines.isNotEmpty()) {
+            replaceHostLines(
+                RemoteSale(
+                    remoteOrderId = targetRemoteId,
+                    tableId = move.toTableId,
+                    tableCode = relocated.targetTableCode,
+                    waiterName = order.waiterName,
+                    cursor = "",
+                    lines = relocated.lines,
+                ),
+            )
+        }
+        clearMoveMarker(dao.getOrder(order.id) ?: order)
+        return true
+    }
+
+    private suspend fun clearMoveMarker(order: OrderEntity) {
+        val leftover = SyncMarkers.withoutMove(order.syncStatus)
+        val next = when {
+            leftover.startsWith(SyncMarkers.PAYMENT_PREFIX) -> leftover
+            leftover.isNotBlank() -> leftover
+            order.status == RestaurantStatuses.ORDER_PAID -> RestaurantStatuses.SYNC_STATE_SYNCED
+            dao.getOrderItems(order.id).any { !it.id.startsWith(SyncMarkers.REMOTE_ITEM_PREFIX) } ->
+                RestaurantStatuses.SYNC_STATE_PENDING
+            else -> RestaurantStatuses.SYNC_STATE_SYNCED
+        }
+        dao.updateSyncStatus(order.id, next)
     }
 
     private suspend fun settleOfflinePayment(
@@ -257,6 +337,14 @@ class SyncRepository(
     }
 
     suspend fun applyRemoteSale(sale: RemoteSale) {
+        upsertHostSale(sale, replaceRemoteLines = false)
+    }
+
+    suspend fun replaceHostLines(sale: RemoteSale) {
+        upsertHostSale(sale, replaceRemoteLines = true)
+    }
+
+    private suspend fun upsertHostSale(sale: RemoteSale, replaceRemoteLines: Boolean) {
         if (sale.remoteOrderId.isBlank()) return
         val existing = dao.getOrderByRemoteId(sale.remoteOrderId)
             ?: sale.tableId.takeIf { it.isNotBlank() }?.let { dao.getOpenLocalOrderForTable(it) }
@@ -285,6 +373,18 @@ class SyncRepository(
             dao.saveRemoteOrderId(existing.id, sale.remoteOrderId)
         }
 
+        val currentItems = dao.getOrderItems(orderId)
+        val unsynced = if (replaceRemoteLines) {
+            currentItems.filter { !it.id.startsWith(SyncMarkers.REMOTE_ITEM_PREFIX) }
+        } else {
+            emptyList()
+        }
+        if (replaceRemoteLines) {
+            dao.deleteOrderItems(orderId)
+            if (unsynced.isNotEmpty()) {
+                dao.insertOrderItems(unsynced)
+            }
+        }
         val knownIds = dao.getOrderItems(orderId).map { it.id }.toSet()
         val freshItems = sale.lines.mapNotNull { line ->
             val sourceId = line.lineId.ifBlank {

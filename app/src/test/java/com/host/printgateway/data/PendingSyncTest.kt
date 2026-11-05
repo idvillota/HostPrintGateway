@@ -53,4 +53,15 @@ class PendingSyncTest {
         assertEquals(listOf("a1", "a2"), charges.getValue("mesa-2").single().map { it.orderId })
         assertEquals(listOf("b"), charges.getValue("mesa-4").single().map { it.orderId })
     }
+
+    @Test
+    fun table_move_runs_before_a_charge_with_the_same_time() {
+        val timeline = PendingSync.syncTimeline(
+            charges = listOf(PendingCharge("mesa-2", closedAt = 10, orderIds = listOf("pay"))),
+            moves = listOf(PendingTableMove("ord", "mesa-1", "mesa-2", at = 10, merge = false)),
+        )
+
+        assertTrue(timeline[0] is SyncEvent.Move)
+        assertTrue(timeline[1] is SyncEvent.Charge)
+    }
 }

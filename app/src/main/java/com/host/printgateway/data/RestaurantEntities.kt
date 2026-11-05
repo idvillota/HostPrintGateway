@@ -94,6 +94,7 @@ data class LocalPrinterEntity(
     val name: String,
     val mac: String,
     val printsInvoices: Boolean,
+    val printsAllKitchen: Boolean = false,
     val sortOrder: Int,
 )
 

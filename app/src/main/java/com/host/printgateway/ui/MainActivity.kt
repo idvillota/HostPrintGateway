@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.network.AuthManager
@@ -54,6 +55,7 @@ class MainActivity : ComponentActivity() {
                         renewSessionTick = tick,
                         onEnsurePermissions = ::ensurePermissions,
                         onStartGateway = {
+                            if (BuildConfig.READ_ONLY) return@HostApp
                             requestUnrestrictedBattery()
                             ContextCompat.startForegroundService(
                                 this@MainActivity,

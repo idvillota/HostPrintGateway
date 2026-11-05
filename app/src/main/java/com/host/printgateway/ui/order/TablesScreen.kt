@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.DiningTableEntity
 
 @Composable
@@ -94,7 +95,7 @@ fun TablesScreen(
                 }
             }
         }
-        if (cartCount > 0) {
+        if (!BuildConfig.READ_ONLY && cartCount > 0) {
             Button(
                 onClick = onOpenComanda,
                 modifier = Modifier

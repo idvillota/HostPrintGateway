@@ -1,5 +1,6 @@
 package com.host.printgateway.data
 
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.network.MobileSyncApi
 import com.host.printgateway.network.SyncUnauthorized
 
@@ -27,12 +28,14 @@ object HostSyncOperations {
         settings: GatewaySettings,
     ): OfflineSyncResult {
         val repository = RestaurantRepository(database, token)
-        val uploaded = repository.syncPendingOrders(baseUrl, deviceId)
-        if (uploaded.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
-        if (uploaded.isFailure) {
-            return OfflineSyncResult.Failed(
-                uploaded.exceptionOrNull()?.message ?: "No se pudo enviar lo guardado.",
-            )
+        if (!BuildConfig.READ_ONLY) {
+            val uploaded = repository.syncPendingOrders(baseUrl, deviceId)
+            if (uploaded.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
+            if (uploaded.isFailure) {
+                return OfflineSyncResult.Failed(
+                    uploaded.exceptionOrNull()?.message ?: "No se pudo enviar lo guardado.",
+                )
+            }
         }
         val catalog = repository.syncCatalog(baseUrl)
         if (catalog.exceptionOrNull() is SyncUnauthorized) return OfflineSyncResult.Unauthorized
@@ -75,16 +78,19 @@ object HostSyncOperations {
         settings: GatewaySettings,
     ): Boolean {
         val repository = RestaurantRepository(database, token)
-        val api = MobileSyncApi(baseUrl, token)
-        val registered = api.registerDevice(deviceId)
-        if (registered.exceptionOrNull() is SyncUnauthorized) return true
+        if (!BuildConfig.READ_ONLY) {
+            val registered = MobileSyncApi(baseUrl, token).registerDevice(deviceId)
+            if (registered.exceptionOrNull() is SyncUnauthorized) return true
+        }
         val catalog = repository.syncCatalog(baseUrl)
         if (catalog.exceptionOrNull() is SyncUnauthorized) return true
         if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
         val released = repository.releaseTablesSettledOnHost(baseUrl)
         if (released.exceptionOrNull() is SyncUnauthorized) return true
-        val uploaded = repository.syncPendingOrders(baseUrl, deviceId)
-        if (uploaded.exceptionOrNull() is SyncUnauthorized) return true
+        if (!BuildConfig.READ_ONLY) {
+            val uploaded = repository.syncPendingOrders(baseUrl, deviceId)
+            if (uploaded.exceptionOrNull() is SyncUnauthorized) return true
+        }
         val pulled = repository.catchUpOpenAccounts(baseUrl, deviceId, settings.saleCursor)
         if (pulled.exceptionOrNull() is SyncUnauthorized) return true
         pulled.onSuccess { cursor ->

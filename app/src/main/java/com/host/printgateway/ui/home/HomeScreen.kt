@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.ui.components.AppScaffold
 import com.host.printgateway.ui.components.BrandMark
 
@@ -40,23 +41,36 @@ fun HomeScreen(
                 logoPath = logoPath,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 height = 88.dp,
+                fallbackToHost = false,
             )
             Text(
                 text = "Menú principal",
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
-                text = "Elige si vas a tomar pedidos o a cobrar.",
+                text = if (BuildConfig.READ_ONLY) {
+                    "Consulta el estado de las mesas y las cuentas. Esta app no cambia nada en HOST."
+                } else {
+                    "Elige si vas a tomar pedidos o a cobrar."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             MenuCard(
                 title = "Mesas",
-                subtitle = "Ver las mesas, armar la comanda e imprimirla.",
+                subtitle = if (BuildConfig.READ_ONLY) {
+                    "Ver cuáles mesas están libres u ocupadas y qué se pidió."
+                } else {
+                    "Ver las mesas, armar la comanda e imprimirla."
+                },
                 onClick = onOpenTables,
             )
             MenuCard(
-                title = "Pagos",
-                subtitle = "Cobrar una mesa, agregar propina e imprimir la factura.",
+                title = if (BuildConfig.READ_ONLY) "Ventas" else "Pagos",
+                subtitle = if (BuildConfig.READ_ONLY) {
+                    "Ver las cuentas abiertas y sus totales. No se puede cobrar."
+                } else {
+                    "Cobrar una mesa, agregar propina e imprimir la factura."
+                },
                 onClick = onOpenPayments,
             )
         }

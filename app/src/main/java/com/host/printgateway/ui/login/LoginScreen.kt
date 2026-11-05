@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.ui.components.AppScaffold
 import com.host.printgateway.ui.components.BrandMark
 
@@ -63,7 +64,11 @@ fun LoginScreen(
         ) {
             BrandMark(logoPath = logoPath, height = 120.dp)
             Text(
-                text = "Entra para tomar pedidos y cobrar las mesas.",
+                text = if (BuildConfig.READ_ONLY) {
+                    "Entra para consultar mesas y ventas. Esta app no modifica pedidos ni cobros."
+                } else {
+                    "Entra para tomar pedidos y cobrar las mesas."
+                },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

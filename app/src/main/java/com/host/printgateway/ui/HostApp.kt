@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.HostSyncOperations
@@ -128,6 +129,7 @@ fun HostApp(
     fun deviceId(): String = DeviceIdProvider.get(context)
 
     fun activateOfflineMode() {
+        if (BuildConfig.READ_ONLY) return
         offlineMode = true
         settings.offlineMode = true
         offlineNotice = OfflineNotice.None
@@ -287,6 +289,19 @@ fun HostApp(
                 status = settingsStatus,
                 database = database,
                 settings = settings,
+                onApiUrlChange = { next ->
+                    if (next == apiUrl) return@SettingsScreen
+                    settings.apiBaseUrl = next
+                    apiUrl = settings.apiBaseUrl
+                    savedApiUrl = settings.apiBaseUrl
+                    settingsStatus = "Servidor cambiado. Inicia sesión de nuevo."
+                    if (token.isNotBlank()) {
+                        authManager.logout()
+                        token = ""
+                        loginMessage = ""
+                        route = AppRoute.Login
+                    }
+                },
                 onPrinterMacChange = { printerMac = it },
                 onLogoChange = { path ->
                     settings.logoPath = path
@@ -402,7 +417,7 @@ fun HostApp(
                 )
             }
         }
-        if (offlineNotice != OfflineNotice.None && token.isNotBlank()) {
+        if (!BuildConfig.READ_ONLY && offlineNotice != OfflineNotice.None && token.isNotBlank()) {
             OfflineModeBanner(
                 modifier = Modifier.align(Alignment.BottomCenter),
                 notice = offlineNotice,

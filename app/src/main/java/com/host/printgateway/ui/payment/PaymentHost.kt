@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.GatewaySettings
@@ -93,6 +94,7 @@ fun PaymentHost(
     }
 
     fun settle(current: TableBill, printInvoice: Boolean) {
+        if (BuildConfig.READ_ONLY) return
         if (current.lines.isEmpty()) return
         val tip = parseAmount(tipText)
         if (tip == null) {
@@ -157,7 +159,12 @@ fun PaymentHost(
         }
     }
 
-    val title = if (step is PaymentStep.Bill) "Cobro" else "Pagos"
+    val title = when {
+        BuildConfig.READ_ONLY && step is PaymentStep.Bill -> "Cuenta"
+        BuildConfig.READ_ONLY -> "Ventas"
+        step is PaymentStep.Bill -> "Cobro"
+        else -> "Pagos"
+    }
     val onBack = if (step is PaymentStep.Bill) {
         { notice = ""; onStep(PaymentStep.Accounts) }
     } else {

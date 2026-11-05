@@ -22,6 +22,7 @@ fun BrandMark(
     logoPath: String,
     modifier: Modifier = Modifier,
     height: Dp = 96.dp,
+    fallbackToHost: Boolean = true,
 ) {
     val restaurantLogo by produceState<ImageBitmap?>(null, logoPath) {
         value = withContext(Dispatchers.IO) {
@@ -34,7 +35,9 @@ fun BrandMark(
     }
     val logo = restaurantLogo
     if (logo == null) {
-        HostLogo(modifier = modifier, height = height)
+        if (fallbackToHost) {
+            HostLogo(modifier = modifier, height = height)
+        }
     } else {
         Image(
             bitmap = logo,

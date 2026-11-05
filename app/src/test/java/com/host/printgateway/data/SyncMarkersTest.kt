@@ -36,4 +36,27 @@ class SyncMarkersTest {
         assertEquals(0.0, parsed.tip, 0.001)
         assertFalse(parsed.printReceipt)
     }
+
+    @Test
+    fun attachingPayment_keeps_a_pending_table_move() {
+        val move = SyncMarkers.moveMarker("from", "to", 99L, merge = true)
+        val payment = SyncMarkers.paymentMarker("Efectivo", 0.0, printReceipt = false)
+        val combined = SyncMarkers.attachingPayment(payment, move)
+
+        val parsedMove = SyncMarkers.parseMove(combined)
+        val parsedPay = SyncMarkers.parsePayment(combined)
+        assertEquals("from", parsedMove?.fromTableId)
+        assertEquals("to", parsedMove?.toTableId)
+        assertTrue(parsedMove?.merge == true)
+        assertEquals("Efectivo", parsedPay.method)
+        assertEquals(payment, SyncMarkers.withoutMove(combined))
+    }
+
+    @Test
+    fun standalone_move_is_not_a_payment() {
+        val marker = SyncMarkers.moveMarker("a", "b", 1L, merge = false)
+        assertTrue(SyncMarkers.isStandaloneMove(marker))
+        assertFalse(SyncMarkers.isPayment(marker))
+        assertEquals("", SyncMarkers.withoutMove(marker))
+    }
 }

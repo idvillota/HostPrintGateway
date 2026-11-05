@@ -18,7 +18,8 @@ internal object LocalAccountActions {
         val staleIds = dao.getUnpaidOrders()
             .filter { order ->
                 isFree(order.diningTableId) &&
-                    !order.remoteId.isNullOrBlank()
+                    !order.remoteId.isNullOrBlank() &&
+                    SyncMarkers.parseMove(order.syncStatus) == null
             }
             .map { it.id }
         if (staleIds.isNotEmpty()) {

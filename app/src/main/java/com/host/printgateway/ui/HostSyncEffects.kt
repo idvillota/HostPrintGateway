@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.HostSyncOperations
 import com.host.printgateway.data.PrintGatewayDatabase
@@ -89,7 +90,9 @@ fun HostSyncEffects(
                         },
                     )
                 }
-                !offlineMode && now - lastReachableAt >= HostSyncTiming.OFFLINE_AFTER_MS -> {
+                !BuildConfig.READ_ONLY &&
+                    !offlineMode &&
+                    now - lastReachableAt >= HostSyncTiming.OFFLINE_AFTER_MS -> {
                     if (now >= offerSnoozeUntilNow.value) {
                         onOfflineNoticeChange(OfflineNotice.Offer)
                     }
@@ -137,7 +140,12 @@ fun HostSyncEffects(
     }
 
     LaunchedEffect(uploadNonce, token, savedApiUrl) {
-        if (uploadNonce == 0 || offlineModeNow.value || token.isBlank() || savedApiUrl.isBlank()) {
+        if (BuildConfig.READ_ONLY ||
+            uploadNonce == 0 ||
+            offlineModeNow.value ||
+            token.isBlank() ||
+            savedApiUrl.isBlank()
+        ) {
             return@LaunchedEffect
         }
         val result = withContext(Dispatchers.IO) {
@@ -160,8 +168,11 @@ fun HostSyncEffects(
             ActiveSaleChannel.attach(channel)
             val end = try {
                 channel.listen(
-                    onPrint = { job -> IncomingPrint.offer(job) },
+                    onPrint = { job ->
+                        if (!BuildConfig.READ_ONLY) IncomingPrint.offer(job)
+                    },
                     onPrintQueueReady = {
+                        if (BuildConfig.READ_ONLY) return@listen
                         scope.launch {
                             if (IncomingPrint.accepting) GatewayLinkState.markReady()
                         }
@@ -186,7 +197,7 @@ fun HostSyncEffects(
                         }
                     },
                     onConnected = {
-                        if (IncomingPrint.accepting) {
+                        if (!BuildConfig.READ_ONLY && IncomingPrint.accepting) {
                             val since = PrintSession.sinceIso
                             if (!since.isNullOrBlank() && !PrintSession.freshSent) {
                                 channel.announcePrinting(ready = true, fresh = true, since = since)

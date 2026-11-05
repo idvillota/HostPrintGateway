@@ -29,6 +29,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.payment.BreBProfile
 import com.host.printgateway.ui.order.formatPrice
 
@@ -98,6 +99,17 @@ fun PaymentBillScreen(
             text = "Consumo  ${formatPrice(bill.foodTotal)}",
             style = MaterialTheme.typography.titleMedium,
         )
+        if (BuildConfig.READ_ONLY) {
+            Text(
+                text = "Total  ${formatPrice(bill.foodTotal)}",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (notice.isNotBlank()) {
+                Text(text = notice, color = MaterialTheme.colorScheme.primary)
+            }
+            return@Column
+        }
         Text(text = "Propina", style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = { onTipPercent(0) }) { Text("0%") }

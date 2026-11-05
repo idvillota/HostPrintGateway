@@ -9,15 +9,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
+import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.OrderItemEntity
 
 @Composable
@@ -26,8 +32,11 @@ fun TableMenuScreen(
     tableCode: String,
     notice: String,
     cartCount: Int,
+    relocating: Boolean,
+    canChangeTable: Boolean,
     onOrderedProducts: () -> Unit,
     onNewOrder: () -> Unit,
+    onChangeTable: () -> Unit,
     onOpenComanda: () -> Unit,
 ) {
     Column(
@@ -38,7 +47,11 @@ fun TableMenuScreen(
     ) {
         ScreenIntro(
             title = "Mesa $tableCode",
-            subtitle = "Elige qué quieres hacer",
+            subtitle = if (BuildConfig.READ_ONLY) {
+                "Consulta lo pedido en esta mesa"
+            } else {
+                "Elige qué quieres hacer"
+            },
             notice = notice,
         )
         Column(
@@ -53,14 +66,25 @@ fun TableMenuScreen(
             ) {
                 Text("Productos pedidos")
             }
-            Button(
-                onClick = onNewOrder,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Hacer pedido")
+            if (!BuildConfig.READ_ONLY) {
+                Button(
+                    onClick = onNewOrder,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Hacer pedido")
+                }
+                if (canChangeTable) {
+                    OutlinedButton(
+                        onClick = onChangeTable,
+                        enabled = !relocating,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (relocating) "Cambiando mesa…" else "Cambiar mesa")
+                    }
+                }
             }
         }
-        if (cartCount > 0) {
+        if (!BuildConfig.READ_ONLY && cartCount > 0) {
             Button(
                 onClick = onOpenComanda,
                 modifier = Modifier
@@ -141,6 +165,67 @@ private fun OrderedProductCard(item: OrderItemEntity) {
             )
         }
     }
+}
+
+@Composable
+fun RelocateTableDialog(
+    tables: List<DiningTableEntity>,
+    busy: Boolean,
+    onPick: (DiningTableEntity) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text("Cambiar a otra mesa") },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text("Elige la mesa de destino. Si ya tiene pedido, HOST preguntará si unir las comandas.")
+                tables.forEach { table ->
+                    OutlinedButton(
+                        onClick = { onPick(table) },
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Mesa ${table.code}")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text("Cancelar")
+            }
+        },
+    )
+}
+
+@Composable
+fun MergeTableDialog(
+    tableCode: String,
+    busy: Boolean,
+    onMerge: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { if (!busy) onDismiss() },
+        title = { Text("Unir pedidos") },
+        text = {
+            Text("La mesa $tableCode tiene un pedido abierto. ¿Desea fusionar los pedidos?")
+        },
+        confirmButton = {
+            TextButton(onClick = onMerge, enabled = !busy) {
+                Text("Fusionar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text("Cancelar")
+            }
+        },
+    )
 }
 
 private fun quantityLabel(quantity: Double): String {

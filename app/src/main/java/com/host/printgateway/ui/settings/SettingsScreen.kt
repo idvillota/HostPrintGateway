@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.OrderEntity
 import com.host.printgateway.data.PrintGatewayDatabase
@@ -47,6 +48,7 @@ fun SettingsScreen(
     status: String,
     database: PrintGatewayDatabase,
     settings: GatewaySettings,
+    onApiUrlChange: (String) -> Unit = {},
     onPrinterMacChange: (String) -> Unit,
     onLogoChange: (String) -> Unit,
     onBack: () -> Unit,
@@ -100,15 +102,44 @@ fun SettingsScreen(
                 onStatus = onStatus,
             )
 
-            SectionTitle("Transferencia Bre-B")
-            BreBSettingsSection(settings)
+            if (!BuildConfig.READ_ONLY) {
+                SectionTitle("Transferencia Bre-B")
+                BreBSettingsSection(settings)
+            }
 
             SectionTitle("Servidor")
-            Text(
-                text = "HOST de producción. Esta dirección queda fija en la instalación.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (BuildConfig.CAN_CHOOSE_API) {
+                Text(
+                    text = "Elige a qué HOST conectar. Si cambias de servidor, inicia sesión de nuevo.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                GatewaySettings.hostApiChoices().forEach { choice ->
+                    val selected = apiUrl == choice.url
+                    if (selected) {
+                        Button(
+                            onClick = { },
+                            enabled = false,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(choice.title)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { onApiUrlChange(choice.url) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(choice.title)
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = "HOST de ${BuildConfig.API_ENVIRONMENT}. Esta dirección queda fija en esta instalación.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Text(
                 text = apiUrl,
                 style = MaterialTheme.typography.bodySmall,
@@ -131,6 +162,7 @@ fun SettingsScreen(
             ) {
                 Text(if (autoSyncEnabled) "Desactivar sincronización" else "Activar sincronización")
             }
+            if (!BuildConfig.READ_ONLY) {
             Text(
                 text = if (offlineMode) {
                     "Modo sin internet activo. Pedidos y cobros quedan en el celular."
@@ -205,6 +237,7 @@ fun SettingsScreen(
             ) {
                 Text("Detener gateway")
             }
+            }
 
             if (signedIn) {
                 OutlinedButton(
@@ -215,6 +248,7 @@ fun SettingsScreen(
                 }
             }
 
+            if (!BuildConfig.READ_ONLY) {
             TextButton(onClick = { showAdvanced = !showAdvanced }) {
                 Text(if (showAdvanced) "Ocultar herramientas" else "Herramientas avanzadas")
             }
@@ -267,6 +301,7 @@ fun SettingsScreen(
                         onStatus = onStatus,
                     )
                 }
+            }
             }
 
             if (status.isNotBlank()) {

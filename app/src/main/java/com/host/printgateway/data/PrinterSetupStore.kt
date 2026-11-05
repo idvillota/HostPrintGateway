@@ -18,6 +18,7 @@ class PrinterSetupStore(
                 name = "Impresora",
                 mac = mac,
                 printsInvoices = true,
+                printsAllKitchen = false,
                 sortOrder = 0,
             ),
         )
@@ -28,7 +29,15 @@ class PrinterSetupStore(
         if (printers.isEmpty()) {
             val mac = fallbackMac.trim()
             if (mac.isBlank()) return emptyList()
-            return listOf(PrinterTarget(id = "legacy", mac = mac, categoryIds = emptySet(), printsInvoices = true))
+            return listOf(
+                PrinterTarget(
+                    id = "legacy",
+                    mac = mac,
+                    categoryIds = emptySet(),
+                    printsInvoices = true,
+                    printsAllKitchen = false,
+                ),
+            )
         }
         val categories = dao.getLocalPrinterCategories()
             .groupBy { it.printerId }
@@ -41,6 +50,7 @@ class PrinterSetupStore(
                     .filter { it.isNotEmpty() }
                     .toSet(),
                 printsInvoices = printer.printsInvoices,
+                printsAllKitchen = printer.printsAllKitchen,
             )
         }
     }

@@ -28,6 +28,25 @@ internal object PendingSync {
                     .sortedBy { it.key }
                     .map { it.value }
             }
+
+    /**
+     * Charges and table changes in the order they happened.
+     * A change and a charge with the same time run the change first.
+     */
+    fun syncTimeline(
+        charges: List<PendingCharge>,
+        moves: List<PendingTableMove>,
+    ): List<SyncEvent> {
+        val events = ArrayList<SyncEvent>(charges.size + moves.size)
+        charges.forEach { charge ->
+            events += SyncEvent.Charge(charge.closedAt, charge.tableKey, charge.orderIds)
+        }
+        moves.forEach { move ->
+            events += SyncEvent.Move(move.at, move)
+        }
+        events.sortWith(compareBy<SyncEvent> { it.at }.thenBy { if (it is SyncEvent.Move) 0 else 1 })
+        return events
+    }
 }
 
 internal data class PendingPayment(
@@ -41,3 +60,26 @@ internal data class PendingCharge(
     val closedAt: Long,
     val orderIds: List<String>,
 )
+
+internal data class PendingTableMove(
+    val orderId: String,
+    val fromTableId: String,
+    val toTableId: String,
+    val at: Long,
+    val merge: Boolean,
+)
+
+internal sealed interface SyncEvent {
+    val at: Long
+
+    data class Charge(
+        override val at: Long,
+        val tableKey: String,
+        val orderIds: List<String>,
+    ) : SyncEvent
+
+    data class Move(
+        override val at: Long,
+        val move: PendingTableMove,
+    ) : SyncEvent
+}

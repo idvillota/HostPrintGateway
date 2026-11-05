@@ -23,7 +23,7 @@ import androidx.room.RoomDatabase
         LocalPrinterEntity::class,
         LocalPrinterCategoryEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class PrintGatewayDatabase : RoomDatabase() {
@@ -46,6 +46,7 @@ abstract class PrintGatewayDatabase : RoomDatabase() {
                     .addMigrations(MIGRATION_2_3)
                     .addMigrations(MIGRATION_3_4)
                     .addMigrations(MIGRATION_4_5)
+                    .addMigrations(MIGRATION_5_6)
                     .build().also { instance = it }
             }
 
@@ -113,6 +114,14 @@ abstract class PrintGatewayDatabase : RoomDatabase() {
                 database.execSQL(
                     "CREATE TABLE IF NOT EXISTS local_printer_categories (" +
                         "id TEXT NOT NULL PRIMARY KEY, printerId TEXT NOT NULL, productTypeId TEXT NOT NULL)",
+                )
+            }
+        }
+
+        private val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE local_printers ADD COLUMN printsAllKitchen INTEGER NOT NULL DEFAULT 0",
                 )
             }
         }

@@ -2,9 +2,8 @@ package com.host.printgateway.data
 
 /**
  * Chooses which configured printer receives each kitchen line or the invoice.
- * A line prints only on printers that marked that category.
- * A printer with no categories still receives leftover lines nobody marked.
- * An unmarked invoice printer does not print the receipt.
+ * Kitchen lines go only to printers that marked that category or "all kitchen".
+ * Invoices go only to printers marked for receipts.
  */
 internal object PrinterRouting {
 
@@ -12,21 +11,10 @@ internal object PrinterRouting {
         val active = printers.filter { it.mac.isNotBlank() }
         if (active.isEmpty() || categoryIds.isEmpty()) return emptyList()
 
-        val catchAll = active.filter { it.categoryIds.isEmpty() }
         val indexesByMac = linkedMapOf<String, MutableSet<Int>>()
         categoryIds.forEachIndexed { index, categoryId ->
             val key = categoryId.trim().lowercase()
-            val matches = if (key.isNotEmpty()) {
-                active.filter { key in it.categoryIds }
-            } else {
-                emptyList()
-            }
-            val targets = when {
-                matches.isNotEmpty() -> matches
-                catchAll.isNotEmpty() -> catchAll
-                else -> emptyList()
-            }
-            targets.forEach { printer ->
+            active.filter { printer -> printer.acceptsKitchenLine(key) }.forEach { printer ->
                 indexesByMac.getOrPut(printer.mac) { linkedSetOf() }.add(index)
             }
         }
@@ -46,7 +34,13 @@ internal data class PrinterTarget(
     val mac: String,
     val categoryIds: Set<String>,
     val printsInvoices: Boolean,
-)
+    val printsAllKitchen: Boolean = false,
+) {
+    fun acceptsKitchenLine(categoryId: String): Boolean {
+        if (printsAllKitchen) return true
+        return categoryId.isNotEmpty() && categoryId in categoryIds
+    }
+}
 
 internal data class KitchenCopy(
     val mac: String,

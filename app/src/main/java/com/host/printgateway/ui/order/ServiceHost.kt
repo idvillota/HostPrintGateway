@@ -9,9 +9,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.data.DeviceIdProvider
 import com.host.printgateway.data.DiningTableEntity
 import com.host.printgateway.data.GatewaySettings
+import com.host.printgateway.data.MoveTableOutcome
 import com.host.printgateway.data.OrderDraftLine
 import com.host.printgateway.data.OrderItemEntity
 import com.host.printgateway.data.PrintGatewayDatabase
@@ -54,6 +56,10 @@ fun ServiceHost(
     var syncing by remember { mutableStateOf(false) }
     var occupiedTableIds by remember { mutableStateOf(emptySet<String>()) }
     var orderedItems by remember { mutableStateOf(emptyList<OrderItemEntity>()) }
+    var relocating by remember { mutableStateOf(false) }
+    var pickingRelocate by remember { mutableStateOf(false) }
+    var mergeDestId by remember { mutableStateOf<String?>(null) }
+    var mergeDestCode by remember { mutableStateOf("") }
 
     val detailProductId = (step as? OrderingStep.ProductDetail)?.productId
     var draftNotes by remember(detailProductId) { mutableStateOf("") }
@@ -89,6 +95,55 @@ fun ServiceHost(
     fun open(next: OrderingStep, notice: String = "") {
         session.notice = notice
         onStep(next)
+    }
+
+    fun relocateTo(fromTableId: String, toTableId: String, merge: Boolean?) {
+        if (offlineMode) {
+            session.notice = "El cambio de mesa requiere conexión con HOST."
+            pickingRelocate = false
+            return
+        }
+        relocating = true
+        session.notice = ""
+        scope.launch {
+            val outcome = withContext(Dispatchers.IO) {
+                repository.relocateTable(
+                    fromTableId = fromTableId,
+                    toTableId = toTableId,
+                    merge = merge,
+                    baseUrl = apiUrl,
+                    online = !offlineMode,
+                )
+            }
+            relocating = false
+            val result = outcome.getOrElse { error ->
+                if (error is SyncUnauthorized) {
+                    SessionRenewalNotifier.show(context)
+                }
+                session.notice = error.message ?: "No se pudo cambiar la mesa."
+                return@launch
+            }
+            when (result) {
+                is MoveTableOutcome.Moved -> {
+                    pickingRelocate = false
+                    mergeDestId = null
+                    session.tableId = toTableId
+                    tables = withContext(Dispatchers.IO) { dao.getTables() }
+                    occupiedTableIds = withContext(Dispatchers.IO) {
+                        dao.getUnpaidOrders().mapNotNull { it.diningTableId }.toSet()
+                    }
+                    open(OrderingStep.TableMenu(toTableId), "Pedido en la mesa ${result.tableCode}.")
+                }
+                is MoveTableOutcome.MergeRequired -> {
+                    pickingRelocate = false
+                    mergeDestId = toTableId
+                    mergeDestCode = result.tableCode
+                }
+                is MoveTableOutcome.Rejected -> {
+                    session.notice = result.message
+                }
+            }
+        }
     }
 
     val title = when (step) {
@@ -148,7 +203,11 @@ fun ServiceHost(
                             val catalog = repository.syncCatalog(apiUrl)
                             if (catalog.isSuccess) repository.closeOrdersOnFreeHostTables()
                             val released = repository.releaseTablesSettledOnHost(apiUrl)
-                            val orders = repository.syncPendingOrders(apiUrl, deviceId)
+                            val orders = if (BuildConfig.READ_ONLY) {
+                                Result.success(0)
+                            } else {
+                                repository.syncPendingOrders(apiUrl, deviceId)
+                            }
                             val accounts = repository.catchUpOpenAccounts(
                                 apiUrl,
                                 deviceId,
@@ -204,21 +263,43 @@ fun ServiceHost(
                 },
             )
 
-            is OrderingStep.TableMenu -> TableMenuScreen(
-                padding = padding,
-                tableCode = tables.codeOf(step.tableId),
-                notice = session.notice,
-                cartCount = session.itemCount,
-                onOrderedProducts = {
-                    open(OrderingStep.OrderedProducts(step.tableId))
-                },
-                onNewOrder = {
-                    open(OrderingStep.ProductTypes(step.tableId))
-                },
-                onOpenComanda = {
-                    open(OrderingStep.Comanda(step.tableId, step))
-                },
-            )
+            is OrderingStep.TableMenu -> {
+                TableMenuScreen(
+                    padding = padding,
+                    tableCode = tables.codeOf(step.tableId),
+                    notice = session.notice,
+                    cartCount = session.itemCount,
+                    relocating = relocating,
+                    canChangeTable = !offlineMode,
+                    onOrderedProducts = {
+                        open(OrderingStep.OrderedProducts(step.tableId))
+                    },
+                    onNewOrder = {
+                        open(OrderingStep.ProductTypes(step.tableId))
+                    },
+                    onChangeTable = { pickingRelocate = true },
+                    onOpenComanda = {
+                        open(OrderingStep.Comanda(step.tableId, step))
+                    },
+                )
+                if (pickingRelocate) {
+                    RelocateTableDialog(
+                        tables = tables.filter { it.isActive && it.id != step.tableId },
+                        busy = relocating,
+                        onPick = { dest -> relocateTo(step.tableId, dest.id, merge = null) },
+                        onDismiss = { pickingRelocate = false },
+                    )
+                }
+                val destId = mergeDestId
+                if (destId != null) {
+                    MergeTableDialog(
+                        tableCode = mergeDestCode,
+                        busy = relocating,
+                        onMerge = { relocateTo(step.tableId, destId, merge = true) },
+                        onDismiss = { mergeDestId = null },
+                    )
+                }
+            }
 
             is OrderingStep.OrderedProducts -> OrderedProductsScreen(
                 padding = padding,

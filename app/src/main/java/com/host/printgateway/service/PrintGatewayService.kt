@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import com.host.printgateway.R
 import com.host.printgateway.data.GatewaySettings
 import com.host.printgateway.data.PrintGatewayDatabase
 import com.host.printgateway.data.RestaurantDao
@@ -235,7 +236,7 @@ class PrintGatewayService : Service() {
     private fun buildNotification(text: String): Notification {
         ensureChannel()
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Host Lite")
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_menu_share)
             .setOngoing(true)
@@ -252,7 +253,7 @@ class PrintGatewayService : Service() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Host Lite",
+            getString(R.string.app_name),
             NotificationManager.IMPORTANCE_LOW,
         )
         getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)

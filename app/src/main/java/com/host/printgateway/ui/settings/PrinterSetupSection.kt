@@ -57,7 +57,7 @@ fun PrinterSetupSection(
     }
 
     Text(
-        text = "Cada impresora usa su MAC. Las categorías salen de HOST. Sin categorías, imprime lo que ninguna otra tomó.",
+        text = "Cada impresora usa su MAC. Marca categorías o Todas las comandas para cocina, y Facturas para recibos. HOST puede enviar todos los trabajos; esta app solo imprime lo que marques.",
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -73,6 +73,7 @@ fun PrinterSetupSection(
                     name = printer.name,
                     mac = printer.mac,
                     printsInvoices = printer.printsInvoices,
+                    printsAllKitchen = printer.printsAllKitchen,
                     categoryIds = categoryIds,
                 )
             },
@@ -102,6 +103,7 @@ fun PrinterSetupSection(
                     name = "",
                     mac = "",
                     printsInvoices = setup.printers.isEmpty(),
+                    printsAllKitchen = false,
                     categoryIds = emptySet(),
                 )
             },
@@ -128,6 +130,7 @@ fun PrinterSetupSection(
                                 name = draft.name.ifBlank { "Impresora" },
                                 mac = draft.mac.trim(),
                                 printsInvoices = draft.printsInvoices,
+                                printsAllKitchen = draft.printsAllKitchen,
                                 sortOrder = setup.printers.indexOfFirst { it.first.id == draft.id }
                                     .let { index -> if (index < 0) setup.printers.size else index },
                             ),
@@ -157,7 +160,8 @@ private fun PrinterCard(
         Text(printer.mac, style = MaterialTheme.typography.bodyMedium)
         Text(
             text = when {
-                categoryNames.isEmpty() -> "Todas las categorías sin asignar"
+                printer.printsAllKitchen -> "Todas las comandas"
+                categoryNames.isEmpty() -> "Sin comandas de cocina"
                 else -> categoryNames.joinToString(", ")
             },
             style = MaterialTheme.typography.bodySmall,
@@ -220,7 +224,15 @@ private fun PrinterEditor(
                 label = { Text(type.name) },
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FilterChip(
+                selected = draft.printsAllKitchen,
+                onClick = { onChange(draft.copy(printsAllKitchen = !draft.printsAllKitchen)) },
+                label = { Text("Todas las comandas") },
+            )
             FilterChip(
                 selected = draft.printsInvoices,
                 onClick = { onChange(draft.copy(printsInvoices = !draft.printsInvoices)) },
@@ -239,5 +251,6 @@ private data class PrinterDraft(
     val name: String,
     val mac: String,
     val printsInvoices: Boolean,
+    val printsAllKitchen: Boolean,
     val categoryIds: Set<String>,
 )

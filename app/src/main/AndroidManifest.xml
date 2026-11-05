@@ -18,9 +18,9 @@
         android:allowBackup="false"
         android:icon="@drawable/host_logo"
         android:roundIcon="@drawable/host_logo"
-        android:label="Host Lite"
+        android:label="@string/app_name"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="${usesCleartextTraffic}"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
         <service

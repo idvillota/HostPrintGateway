@@ -1,5 +1,6 @@
 package com.host.printgateway.network
 
+import com.host.printgateway.BuildConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -66,6 +67,10 @@ class ApiClient(
             )
         }
 
+        if (!isAllowedInThisApp(method, path)) {
+            error("Esta app solo consulta. No envía cambios a HOST.")
+        }
+
         val mediaJson = JSON_MEDIA
         when (method.uppercase()) {
             "GET" -> builder.get()
@@ -93,5 +98,13 @@ class ApiClient(
 
     companion object {
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
+
+        private fun isAllowedInThisApp(method: String, path: String): Boolean {
+            if (!BuildConfig.READ_ONLY) return true
+            val verb = method.uppercase()
+            if (verb == "GET") return true
+            val route = path.substringBefore('?')
+            return verb == "POST" && route.equals("/api/Auth/login", ignoreCase = true)
+        }
     }
 }

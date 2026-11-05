@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.host.printgateway.BuildConfig
 import com.host.printgateway.ui.order.formatPrice
 
 @Composable
@@ -32,7 +33,11 @@ fun PaymentAccountsScreen(
     ) {
         Text(text = "Cuentas abiertas", style = MaterialTheme.typography.titleLarge)
         Text(
-            text = "Elige la mesa que vas a cobrar.",
+            text = if (BuildConfig.READ_ONLY) {
+                "Consulta el total de cada mesa. No se puede cobrar desde esta app."
+            } else {
+                "Elige la mesa que vas a cobrar."
+            },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
         )

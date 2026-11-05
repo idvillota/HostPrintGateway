@@ -23,10 +23,7 @@ object ConfiguredPrint {
         val printers = PrinterSetupStore(dao).targets(fallbackMac)
         val copies = PrinterRouting.kitchenCopies(categories, printers)
         if (copies.isEmpty()) {
-            if (printers.any { it.categoryIds.isNotEmpty() }) {
-                return CopyResult.Printed
-            }
-            return PrintPipeline.printKitchenTicketXml(payload, fallbackMac).toCopyResult()
+            return CopyResult.Printed
         }
         var failure: String? = null
         for (copy in copies) {
